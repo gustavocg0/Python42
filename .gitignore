@@ -1,5 +1,6 @@
 # Local-only Claude Code settings (personal permission grants)
 .claude/settings.local.json
+.claude/scheduled_tasks.lock
 
 # OS cruft
 Thumbs.db
