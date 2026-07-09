@@ -1,0 +1,484 @@
+# ---------------------------------------------------------------------------
+# SOC platform — local POC stack (design docs/design/platform-foundation-mvp.md §7).
+#
+#   scripts/poc-up.sh     -> bootstrap .env + dev CA, build, up, wait healthy
+#   scripts/poc-smoke.sh  -> end-to-end signup -> ingest -> alert smoke test
+#
+# Interpolation values come from the repo-root .env (generated from
+# ops/docker/.env.example by scripts/poc-up.sh — never committed, SEC-49).
+#
+# Topology (see ops/README.md for the full map):
+#   networks: edge     — host-reachable surface (gateway, mailpit UI, agent-sim)
+#             backend  — internal-only (internal: true): apps + stores; the
+#                        ONLY path into dataplane/controlplane is the gateway
+#                        (SEC-14 universal header stripping / SEC-40)
+#   one-shot gates: dev-ca-bootstrap -> migrate -> rulepub -> app services
+# ---------------------------------------------------------------------------
+
+name: soc-poc
+
+# ---------------------------------------------------------------- extensions
+x-python-image: &python-image
+  build:
+    context: .
+    dockerfile: ops/docker/python.Dockerfile
+    target: runtime
+  image: soc-poc/python:latest
+
+x-app-hardening: &app-hardening
+  restart: unless-stopped
+  read_only: true
+  tmpfs:
+    - /tmp
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+  networks:
+    - backend
+
+x-worker-env: &worker-env
+  SOC_DATABASE_URL: postgresql://svc_dataplane:${SVC_DATAPLANE_DB_PASSWORD}@postgres:5432/soc
+  SOC_REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+  SOC_ELASTICSEARCH_URL: http://elastic:${ES_PASSWORD}@elasticsearch:9200
+
+x-worker-depends: &worker-depends
+  migrate:
+    condition: service_completed_successfully
+  rulepub:
+    condition: service_completed_successfully
+  redis:
+    condition: service_healthy
+  elasticsearch:
+    condition: service_healthy
+
+x-controlplane-env: &controlplane-env
+  CP_ENV: dev
+  CP_HOST: 0.0.0.0
+  CP_PORT: "8001"
+  CP_INTERNAL_HOST: 0.0.0.0
+  CP_INTERNAL_PORT: "8101"
+  CP_DATABASE_URL: postgresql://svc_controlplane:${SVC_CONTROLPLANE_DB_PASSWORD}@postgres:5432/soc
+  CP_REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+  # Browser origin = console via gateway (CORS allowlist + email link base).
+  CP_CONSOLE_ORIGIN: http://localhost:${WEB_HTTP_PORT:-8080}
+  # Dev-only: the POC gateway serves plain HTTP to the browser, so session
+  # cookies cannot be Secure. Production terminates TLS at the gateway.
+  CP_COOKIE_SECURE: "false"
+  CP_TRUST_PROXY_HEADERS: "true"
+  CP_DATAPLANE_INTERNAL_URL: http://dataplane-internal:8100
+  CP_OUTBOUND_SERVICE_NAME: controlplane
+  CP_OUTBOUND_SERVICE_KEY: ${SVC_KEY_CONTROLPLANE}
+  # Inbound HMAC verification key for dataplane->controlplane tokens (SEC-40).
+  CP_SVC_KEY_DATAPLANE: ${SVC_KEY_DATAPLANE}
+  CP_MAILER: smtp
+  CP_SMTP_HOST: mailpit
+  CP_SMTP_PORT: "1025"
+  CP_CHALLENGE_STUB_TOKEN: ${CP_CHALLENGE_STUB_TOKEN}
+
+x-dataplane-env: &dataplane-env
+  DP_DATABASE_URL: postgresql://svc_dataplane:${SVC_DATAPLANE_DB_PASSWORD}@postgres:5432/soc
+  DP_REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+  DP_ES_URL: http://elastic:${ES_PASSWORD}@elasticsearch:9200
+  DP_GATEWAY_AUTH_SECRET: ${GATEWAY_AUTH_SECRET}
+  DP_CA_CERT: /certs/dev-ca.crt
+  DP_CA_KEY: /certs/dev-ca.key
+  DP_ENTITLEMENTS_BASE_URL: http://controlplane-internal:8101
+  DP_ENTITLEMENTS_SIGNING_KEY: ${SVC_KEY_DATAPLANE}
+  DP_INTERNAL_SERVICE_KEYS: '{"controlplane":"${SVC_KEY_CONTROLPLANE}"}'
+  DP_CONSOLE_ORIGIN: http://localhost:${WEB_HTTP_PORT:-8080}
+  # ingest_url base returned by enroll (contract §10); agents inside the
+  # compose network reach the gateway by service name.
+  DP_PUBLIC_INGEST_BASE_URL: https://gateway:8443
+
+services:
+  # ================================================================= stores
+  postgres:
+    image: postgres:16-alpine@sha256:7a396fd264a2067788b6551122b50f162bf6136312c7fc9d74381cb92c648382
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: soc_owner          # owner/migration user (db/README.md)
+      POSTGRES_PASSWORD: ${POSTGRES_OWNER_PASSWORD}
+      POSTGRES_DB: soc
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U soc_owner -d soc"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - backend
+
+  redis:
+    image: redis:7-alpine@sha256:b1addbe72465a718643cff9e60a58e6df1841e29d6d7d60c9a85d8d72f08d1a7
+    restart: unless-stopped
+    # Password appended from .env (dev-only exposure via inspect; SEC-19 ACLs
+    # are the production stamp's job — see ops/README.md).
+    command: ["sh", "-c", "exec redis-server /usr/local/etc/redis/redis.conf --requirepass \"$$REDIS_PASSWORD\""]
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    volumes:
+      - ./ops/docker/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" --no-auth-warning ping | grep -q PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - backend
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.17.4@sha256:795ad956a5a620646b1a4a7d982ece76d3791ca996118a11f726d66fef1b7765
+    restart: unless-stopped
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "true"          # basic auth on (dev: no TLS)
+      xpack.security.http.ssl.enabled: "false"
+      xpack.security.transport.ssl.enabled: "false"
+      ELASTIC_PASSWORD: ${ES_PASSWORD}
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs -u \"elastic:$${ELASTIC_PASSWORD}\" 'http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s' >/dev/null"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+      start_period: 60s
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - backend
+
+  mailpit:
+    image: axllent/mailpit:v1.24@sha256:75f065351410c72cd121c4997713c364f9df28270f89f68fed78c56601a4b3ff
+    restart: unless-stopped
+    ports:
+      - "${MAILPIT_UI_PORT:-8025}:8025"   # web UI + API (smoke script reads mail here)
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - edge
+      - backend
+
+  # ============================================================== one-shots
+  dev-ca-bootstrap:
+    build:
+      context: .
+      dockerfile: ops/docker/dev-ca-bootstrap/Dockerfile
+    restart: "no"
+    # Runs as root once: must chown key material to service UIDs (see script).
+    volumes:
+      - dev-ca:/certs
+    networks:
+      - backend
+
+  migrate:
+    build:
+      context: .
+      dockerfile: ops/docker/python.Dockerfile
+      target: migrate
+    image: soc-poc/migrate:latest
+    restart: "no"
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      DATABASE_URL: postgresql://soc_owner:${POSTGRES_OWNER_PASSWORD}@postgres:5432/soc
+      ES_URL: http://elastic:${ES_PASSWORD}@elasticsearch:9200
+      SVC_CONTROLPLANE_DB_PASSWORD: ${SVC_CONTROLPLANE_DB_PASSWORD}
+      SVC_DATAPLANE_DB_PASSWORD: ${SVC_DATAPLANE_DB_PASSWORD}
+      SVC_JOBS_DB_PASSWORD: ${SVC_JOBS_DB_PASSWORD}
+      SEED_DEV: "1"                       # dev marker tenants (db/seed_dev.sql)
+    depends_on:
+      postgres:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - backend
+
+  rulepub:
+    <<: *python-image
+    restart: "no"
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    entrypoint: ["/usr/local/bin/rulepub-publish.sh"]
+    working_dir: /app
+    environment:
+      DATAPLANE_DATABASE_URL: postgresql://svc_dataplane:${SVC_DATAPLANE_DB_PASSWORD}@postgres:5432/soc
+      PACK_PATH: /app/rules/pack.yaml
+      PUBLISHED_BY: poc-compose
+    volumes:
+      - ./rules:/app/rules:ro             # rule pack is content, not code (SEC-27)
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    networks:
+      - backend
+
+  # ============================================================ controlplane
+  controlplane-api:
+    <<: [*python-image, *app-hardening]
+    command: ["python", "-m", "controlplane.main"]
+    environment: *controlplane-env
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8001/healthz', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+      mailpit:
+        condition: service_healthy
+
+  controlplane-internal:
+    <<: [*python-image, *app-hardening]
+    command: ["python", "-m", "controlplane.internal_main"]
+    environment: *controlplane-env
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8101/healthz', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  # =============================================================== dataplane
+  dataplane-api:
+    <<: [*python-image, *app-hardening]
+    command: ["uvicorn", "--factory", "dataplane.main:build_app", "--host", "0.0.0.0", "--port", "8000"]
+    environment: *dataplane-env
+    volumes:
+      - dev-ca:/certs:ro                  # CA key: signs device CSRs (ADR-0006)
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    depends_on:
+      <<: *worker-depends
+      dev-ca-bootstrap:
+        condition: service_completed_successfully
+      controlplane-internal:
+        condition: service_healthy        # entitlements source (ADR-0005)
+
+  dataplane-internal:
+    <<: [*python-image, *app-hardening]
+    command: ["uvicorn", "--factory", "dataplane.internal_main:build_app", "--host", "0.0.0.0", "--port", "8100"]
+    environment: *dataplane-env
+    volumes:
+      - dev-ca:/certs:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8100/healthz', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    depends_on:
+      <<: *worker-depends
+      dev-ca-bootstrap:
+        condition: service_completed_successfully
+
+  # ================================================================= workers
+  worker-normalizer:
+    <<: [*python-image, *app-hardening]
+    command: ["python", "-m", "dataplane.workers.normalizer"]
+    environment: *worker-env
+    depends_on: *worker-depends
+
+  worker-detector:
+    <<: [*python-image, *app-hardening]
+    command: ["python", "-m", "dataplane.workers.detector"]
+    environment: *worker-env
+    depends_on: *worker-depends
+
+  worker-alerter:
+    <<: [*python-image, *app-hardening]
+    command: ["python", "-m", "dataplane.workers.alerter"]
+    environment: *worker-env
+    depends_on: *worker-depends
+
+  worker-triager:
+    <<: [*python-image, *app-hardening]
+    command: ["python", "-m", "dataplane.workers.triager"]
+    environment:
+      <<: *worker-env
+      # Keyless deterministic triage for the POC (no LLM credentials, SEC-49).
+      TRIAGE_FAKE: "1"
+    depends_on: *worker-depends
+
+  worker-asset-dedup:
+    <<: [*python-image, *app-hardening]
+    command: ["python", "-m", "dataplane.workers.asset_dedup"]
+    environment: *worker-env
+    depends_on: *worker-depends
+
+  jobs:
+    <<: [*python-image, *app-hardening]
+    command: ["python", "-m", "dataplane.jobs"]
+    environment:
+      SOC_DATABASE_URL: postgresql://svc_jobs:${SVC_JOBS_DB_PASSWORD}@postgres:5432/soc
+      SOC_REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      SOC_ELASTICSEARCH_URL: http://elastic:${ES_PASSWORD}@elasticsearch:9200
+    depends_on: *worker-depends
+
+  # ===================================================================== web
+  web:
+    build:
+      context: .
+      dockerfile: ops/docker/web.Dockerfile
+      args:
+        # Inlined into the client bundle at BUILD time (Next.js contract).
+        NEXT_PUBLIC_CONTROLPLANE_URL: http://localhost:${CP_HTTP_PORT:-8081}
+        NEXT_PUBLIC_DATAPLANE_URL: http://localhost:${DP_HTTP_PORT:-8082}
+    image: soc-poc/web:latest
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /app/.next/cache
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    environment:
+      # Runtime copies for src/middleware.ts (CSP connect-src).
+      NEXT_PUBLIC_CONTROLPLANE_URL: http://localhost:${CP_HTTP_PORT:-8081}
+      NEXT_PUBLIC_DATAPLANE_URL: http://localhost:${DP_HTTP_PORT:-8082}
+    networks:
+      - backend
+
+  # ================================================================= gateway
+  gateway:
+    build:
+      context: .
+      dockerfile: ops/docker/gateway.Dockerfile
+    image: soc-poc/gateway:latest
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /etc/nginx/conf.d                 # envsubst renders templates here
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    environment:
+      GATEWAY_AUTH_SECRET: ${GATEWAY_AUTH_SECRET}
+    ports:
+      - "${WEB_HTTP_PORT:-8080}:8080"     # console (browser origin)
+      - "${CP_HTTP_PORT:-8081}:8081"      # controlplane public API
+      - "${DP_HTTP_PORT:-8082}:8082"      # dataplane public API + generic ingest
+      - "${AGENT_MTLS_PORT:-8443}:8443"   # agent mTLS
+    volumes:
+      - dev-ca:/certs:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/gw-healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    depends_on:
+      dev-ca-bootstrap:
+        condition: service_completed_successfully
+      web:
+        condition: service_started
+      controlplane-api:
+        condition: service_healthy
+      dataplane-api:
+        condition: service_healthy
+    networks:
+      - edge
+      - backend
+
+  # ======================================================== demo: agent-sim
+  # The endpoint-agent team owns agent/Dockerfile; this service only wires it.
+  # SOC_ENROLL_TOKEN is written into .env by scripts/poc-smoke.sh, then:
+  #   docker compose --profile demo up -d agent-sim
+  agent-sim:
+    profiles: ["demo"]
+    build:
+      context: ./agent
+      dockerfile: Dockerfile
+    image: soc-poc/agent-sim:latest
+    restart: unless-stopped
+    environment:
+      SOC_GATEWAY_URL: https://gateway:8443
+      SOC_ENROLL_TOKEN: ${SOC_ENROLL_TOKEN:-}
+      SOC_CA_CERT_PATH: /certs/dev-ca.crt
+    volumes:
+      - dev-ca:/certs:ro
+    depends_on:
+      gateway:
+        condition: service_healthy
+    networks:
+      - edge
+
+  # =================================================== debug: store access
+  # Stores live on the internal-only network; these socat forwarders expose
+  # them on the host ONLY under the debug profile:
+  #   docker compose --profile debug up -d
+  debug-postgres:
+    profiles: ["debug"]
+    image: alpine/socat:1.8.0.0@sha256:0a861c561b21bf3509a897a07f0daa2e2069cf8973ac55b00d6079c5207ba761
+    restart: unless-stopped
+    command: ["tcp-listen:5432,fork,reuseaddr", "tcp-connect:postgres:5432"]
+    ports:
+      - "${DEBUG_POSTGRES_PORT:-5432}:5432"
+    networks: [edge, backend]
+
+  debug-redis:
+    profiles: ["debug"]
+    image: alpine/socat:1.8.0.0@sha256:0a861c561b21bf3509a897a07f0daa2e2069cf8973ac55b00d6079c5207ba761
+    restart: unless-stopped
+    command: ["tcp-listen:6379,fork,reuseaddr", "tcp-connect:redis:6379"]
+    ports:
+      - "${DEBUG_REDIS_PORT:-6379}:6379"
+    networks: [edge, backend]
+
+  debug-elasticsearch:
+    profiles: ["debug"]
+    image: alpine/socat:1.8.0.0@sha256:0a861c561b21bf3509a897a07f0daa2e2069cf8973ac55b00d6079c5207ba761
+    restart: unless-stopped
+    command: ["tcp-listen:9200,fork,reuseaddr", "tcp-connect:elasticsearch:9200"]
+    ports:
+      - "${DEBUG_ES_PORT:-9200}:9200"
+    networks: [edge, backend]
+
+networks:
+  edge:
+    driver: bridge
+  backend:
+    driver: bridge
+    internal: true          # no host/internet egress; gateway is the only door
+
+volumes:
+  pgdata:
+  esdata:
+  redisdata:
+  dev-ca:

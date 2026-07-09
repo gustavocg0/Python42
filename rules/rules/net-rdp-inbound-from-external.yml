@@ -1,0 +1,42 @@
+id: net-rdp-inbound-from-external
+version: "1.0.0"
+title: Inbound RDP Connection From External Address
+description: >
+  Detects inbound TCP connections to port 3389 (RDP) originating from a
+  non-private source address. Internet-exposed RDP is the single most common
+  ransomware entry vector for SMEs; any inbound RDP from public IP space means the
+  host is reachable from the internet and actively being connected to (or
+  scanned). Even "expected" exposure deserves an alert until acknowledged.
+severity: high
+event_class: network_activity
+min_schema_version: "1.0.0"
+mitre_technique_ids:
+  - T1133
+  - T1021.001
+entity:
+  - host.hostname
+  - src.ip
+detection:
+  condition:
+    all:
+      - field: direction
+        op: equals
+        value: "inbound"
+      - field: protocol
+        op: equals
+        value: "tcp"
+      - field: dst.port
+        op: equals
+        value: 3389
+      - not:
+          field: src.ip
+          op: istartswith
+          value: ["10.", "192.168.", "172.16.", "172.17.", "172.18.", "172.19.", "172.20.", "172.21.", "172.22.", "172.23.", "172.24.", "172.25.", "172.26.", "172.27.", "172.28.", "172.29.", "172.30.", "172.31.", "127.", "169.254.", "fe80:", "fc", "fd", "::1"]
+false_positives:
+  - Deliberately published RDP behind a firewall port-forward (still a risk worth
+    surfacing — recommend VPN/RD Gateway instead). If the tenant accepts the risk,
+    they can disable the rule per tenant (AC-38); entity is host+src.ip so steady
+    scanner noise against an exposed host dedups into one alert per source (AC-41/42).
+references:
+  - https://attack.mitre.org/techniques/T1133/
+  - https://attack.mitre.org/techniques/T1021/001/

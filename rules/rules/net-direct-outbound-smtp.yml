@@ -1,0 +1,40 @@
+id: net-direct-outbound-smtp
+version: "1.0.0"
+title: Direct Outbound SMTP From Endpoint
+description: >
+  Detects outbound TCP connections to port 25 on external addresses. Modern mail
+  clients submit via 465/587 to their provider; direct-to-MX traffic on port 25
+  from a workstation indicates spam-bot malware or a compromised host being used
+  for mail relay. Port 25 only - submission ports 465/587 are deliberately
+  excluded because they carry the entire benign mail-client population.
+severity: medium
+event_class: network_activity
+min_schema_version: "1.0.0"
+mitre_technique_ids:
+  - T1071.003
+entity:
+  - host.hostname
+  - dst.ip
+detection:
+  condition:
+    all:
+      - field: direction
+        op: equals
+        value: "outbound"
+      - field: protocol
+        op: equals
+        value: "tcp"
+      - field: dst.port
+        op: equals
+        value: 25
+      - not:
+          field: dst.ip
+          op: istartswith
+          value: ["10.", "192.168.", "172.16.", "172.17.", "172.18.", "172.19.", "172.20.", "172.21.", "172.22.", "172.23.", "172.24.", "172.25.", "172.26.", "172.27.", "172.28.", "172.29.", "172.30.", "172.31.", "127.", "169.254.", "fe80:", "fc", "fd", "::1"]
+false_positives:
+  - On-premises mail servers, MFPs/scanners doing scan-to-email, and monitoring
+    appliances that send mail directly. If the matching asset IS the tenant's mail
+    server, the tenant should disable this rule (per-tenant toggle, AC-38) or the
+    alerts should be closed as expected_behavior for that host entity.
+references:
+  - https://attack.mitre.org/techniques/T1071/003/

@@ -1,0 +1,34 @@
+id: auth-account-lockout
+version: "1.0.0"
+title: Logon Failure Against Locked-Out Account
+description: >
+  Detects a failed logon where the account is locked out. Because a lockout only
+  occurs after the domain/local policy failure threshold is exceeded, a single
+  locked-out failure event is a stateless proxy for a preceding burst of bad
+  passwords - the MVP engine evaluates per event, and this rule turns "burst"
+  detection into a single-event condition. Host+user entity dedups continued
+  hammering into one alert with a rising occurrence count.
+severity: medium
+event_class: authentication
+min_schema_version: "1.0.0"
+mitre_technique_ids:
+  - T1110.001
+entity:
+  - host.hostname
+  - user.name
+detection:
+  condition:
+    all:
+      - field: activity
+        op: equals
+        value: "logon_failed"
+      - field: failure_reason
+        op: equals
+        value: "account_locked"
+false_positives:
+  - Users returning from leave with a forgotten password, or a stale device/service
+    retrying an old password until it locks the account. Both generate identical
+    signals; check the source (src_ip on the linked events) before closing as
+    expected_behavior.
+references:
+  - https://attack.mitre.org/techniques/T1110/001/

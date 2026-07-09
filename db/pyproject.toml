@@ -1,0 +1,19 @@
+[project]
+name = "soc-db"
+version = "0.1.0"
+description = "SOC platform data layer: PostgreSQL migrations, Elasticsearch templates, Redis key conventions"
+requires-python = ">=3.11"
+dependencies = [
+    "psycopg[binary]>=3.1",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+]
+
+# db/ is a uv workspace member (workspace root pyproject is owned by
+# backend-architect). This project is a plain script directory, not an
+# installable package.
+[tool.uv]
+package = false

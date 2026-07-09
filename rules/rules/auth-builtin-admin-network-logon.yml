@@ -1,0 +1,41 @@
+id: auth-builtin-admin-network-logon
+version: "1.0.0"
+title: Built-in Administrator Account Used Over the Network
+description: >
+  Detects successful network or remote-interactive logons by the built-in
+  "administrator" account. Best practice disables or renames this account; when
+  attackers obtain its (often shared) password, they use it for lateral movement
+  over SMB/RDP. Interactive console logons are deliberately excluded - occasional
+  local break-glass use is expected and would drown the signal.
+severity: medium
+event_class: authentication
+min_schema_version: "1.0.0"
+mitre_technique_ids:
+  - T1078.003
+  - T1021.002
+entity:
+  - host.hostname
+  - user.name
+detection:
+  condition:
+    all:
+      - field: activity
+        op: equals
+        value: "logon"
+      - field: status
+        op: equals
+        value: "success"
+      - field: user.name
+        op: iequals
+        value: "administrator"
+      - field: logon_type
+        op: in
+        value: ["network", "remote_interactive"]
+false_positives:
+  - Shops that still run remote administration and backup jobs as the built-in
+    Administrator. Frequent, stable hits from management servers are expected
+    there - close as expected_behavior naming the management system, and recommend
+    migrating to named admin accounts. Recurring closes feed tuning (AC-46).
+references:
+  - https://attack.mitre.org/techniques/T1078/003/
+  - https://attack.mitre.org/techniques/T1021/002/

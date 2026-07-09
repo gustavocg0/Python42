@@ -1,0 +1,42 @@
+id: auth-failed-admin-logon-external
+version: "1.0.0"
+title: Failed Logon to Privileged Account Name From External Address
+description: >
+  Detects failed logons against well-known privileged account names
+  (administrator, admin, root, sysadmin) from public IP space. This is the
+  signature of internet-facing brute force / password spraying against exposed
+  services. Stateless per event; the host+user entity turns a spray burst into one
+  alert whose occurrence count reflects intensity (AC-41/42). The exists guard on
+  src_ip keeps local console failures out of scope.
+severity: high
+event_class: authentication
+min_schema_version: "1.0.0"
+mitre_technique_ids:
+  - T1110.001
+  - T1078.003
+entity:
+  - host.hostname
+  - user.name
+detection:
+  condition:
+    all:
+      - field: activity
+        op: equals
+        value: "logon_failed"
+      - field: user.name
+        op: iin
+        value: ["administrator", "admin", "root", "sysadmin"]
+      - field: src_ip
+        op: exists
+      - not:
+          field: src_ip
+          op: istartswith
+          value: ["10.", "192.168.", "172.16.", "172.17.", "172.18.", "172.19.", "172.20.", "172.21.", "172.22.", "172.23.", "172.24.", "172.25.", "172.26.", "172.27.", "172.28.", "172.29.", "172.30.", "172.31.", "127.", "169.254.", "fe80:", "fc", "fd", "::1"]
+false_positives:
+  - An administrator legitimately connecting from outside without VPN who typos a
+    password. Rare and self-identifying (single source IP, low count). High steady
+    counts are internet background noise against an exposed service - the fix is
+    closing the exposure, not the alert; do not close as false_positive in that case.
+references:
+  - https://attack.mitre.org/techniques/T1110/001/
+  - https://attack.mitre.org/techniques/T1078/003/

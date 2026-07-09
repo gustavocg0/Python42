@@ -1,0 +1,70 @@
+id: proc-shadow-copy-deletion
+version: "1.0.0"
+title: Volume Shadow Copy Deletion or Recovery Sabotage
+description: >
+  Detects deletion of Volume Shadow Copies (vssadmin delete shadows, wmic
+  shadowcopy delete, wbadmin delete catalog/backup) or disabling of Windows
+  recovery (bcdedit ... recoveryenabled no/off). Ransomware executes these commands
+  immediately before or during encryption to prevent recovery; this is one of the
+  most reliable ransomware canaries available and warrants immediate response,
+  hence critical severity.
+severity: critical
+event_class: process_activity
+min_schema_version: "1.0.0"
+mitre_technique_ids:
+  - T1490
+entity:
+  - host.hostname
+  - user.name
+detection:
+  condition:
+    any:
+      - all:
+          - field: process.name
+            op: iequals
+            value: "vssadmin.exe"
+          - field: process.cmd_line
+            op: icontains
+            value: "delete"
+          - field: process.cmd_line
+            op: icontains
+            value: "shadow"
+      - all:
+          - field: process.name
+            op: iequals
+            value: "wmic.exe"
+          - field: process.cmd_line
+            op: icontains
+            value: "shadowcopy"
+          - field: process.cmd_line
+            op: icontains
+            value: "delete"
+      - all:
+          - field: process.name
+            op: iequals
+            value: "bcdedit.exe"
+          - field: process.cmd_line
+            op: icontains
+            value: "recoveryenabled"
+          - field: process.cmd_line
+            op: icontains
+            value: [" no", " off"]
+      - all:
+          - field: process.name
+            op: iequals
+            value: "wbadmin.exe"
+          - field: process.cmd_line
+            op: icontains
+            value: "delete"
+          - field: process.cmd_line
+            op: icontains
+            value: ["catalog", "backup"]
+false_positives:
+  - Disk-cleanup or backup-rotation scripts that prune old shadow copies
+    (e.g., vssadmin delete shadows with the /for and /oldest flags). Rare on SME
+    endpoints;
+    verify with whoever owns backups before closing, and close as
+    expected_behavior only for a documented maintenance job.
+references:
+  - https://attack.mitre.org/techniques/T1490/
+  - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_shadow_copies_deletion.yml

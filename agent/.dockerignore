@@ -1,0 +1,9 @@
+# Keep the build context small and hermetic: build artifacts and local
+# runtime state must never leak into the image.
+target/
+agent-state/
+agent.toml
+packaging/README.md
+README.md
+Dockerfile
+.dockerignore

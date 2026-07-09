@@ -1,0 +1,116 @@
+{
+  "rule_id": "net-rdp-inbound-from-external",
+  "rule_version": "1.0.0",
+  "must_match": [
+    {
+      "name": "inbound RDP from public IP",
+      "event": {
+        "event_id": "00000000-0000-4000-8000-000000000054",
+        "tenant_id": "8c9d0e1f-2a3b-4c5d-6e7f-8a9b0c1d2e3f",
+        "schema_version": "1.0.0",
+        "event_class": "network_activity",
+        "activity": "connection_opened",
+        "event_time": "2026-07-08T09:14:03.221Z",
+        "ingest_time": "2026-07-08T09:14:05.100Z",
+        "source_type": "agent",
+        "source_event_id": "fixture-000054",
+        "batch_id": "0b7e3c1a-9d2f-4a5b-8c6d-1e2f3a4b5c6d",
+        "source": {
+          "device_id": "dev_FIXTURE01",
+          "agent_version": "0.3.1"
+        },
+        "host": {
+          "hostname": "acme-ws-01",
+          "os_family": "windows",
+          "os_name": "Windows 11 Pro",
+          "os_version": "10.0.26100",
+          "ip": "10.1.4.23"
+        },
+        "direction": "inbound",
+        "protocol": "tcp",
+        "src": {
+          "ip": "203.0.113.99",
+          "port": 54321
+        },
+        "dst": {
+          "ip": "10.1.4.23",
+          "port": 3389
+        }
+      }
+    }
+  ],
+  "must_not_match": [
+    {
+      "name": "inbound RDP from LAN (helpdesk)",
+      "event": {
+        "event_id": "00000000-0000-4000-8000-000000000055",
+        "tenant_id": "8c9d0e1f-2a3b-4c5d-6e7f-8a9b0c1d2e3f",
+        "schema_version": "1.0.0",
+        "event_class": "network_activity",
+        "activity": "connection_opened",
+        "event_time": "2026-07-08T09:14:03.221Z",
+        "ingest_time": "2026-07-08T09:14:05.100Z",
+        "source_type": "agent",
+        "source_event_id": "fixture-000055",
+        "batch_id": "0b7e3c1a-9d2f-4a5b-8c6d-1e2f3a4b5c6d",
+        "source": {
+          "device_id": "dev_FIXTURE01",
+          "agent_version": "0.3.1"
+        },
+        "host": {
+          "hostname": "acme-ws-01",
+          "os_family": "windows",
+          "os_name": "Windows 11 Pro",
+          "os_version": "10.0.26100",
+          "ip": "10.1.4.23"
+        },
+        "direction": "inbound",
+        "protocol": "tcp",
+        "src": {
+          "ip": "192.168.1.50",
+          "port": 54321
+        },
+        "dst": {
+          "ip": "10.1.4.23",
+          "port": 3389
+        }
+      }
+    },
+    {
+      "name": "inbound HTTPS from public IP (not RDP)",
+      "event": {
+        "event_id": "00000000-0000-4000-8000-000000000056",
+        "tenant_id": "8c9d0e1f-2a3b-4c5d-6e7f-8a9b0c1d2e3f",
+        "schema_version": "1.0.0",
+        "event_class": "network_activity",
+        "activity": "connection_opened",
+        "event_time": "2026-07-08T09:14:03.221Z",
+        "ingest_time": "2026-07-08T09:14:05.100Z",
+        "source_type": "agent",
+        "source_event_id": "fixture-000056",
+        "batch_id": "0b7e3c1a-9d2f-4a5b-8c6d-1e2f3a4b5c6d",
+        "source": {
+          "device_id": "dev_FIXTURE01",
+          "agent_version": "0.3.1"
+        },
+        "host": {
+          "hostname": "acme-ws-01",
+          "os_family": "windows",
+          "os_name": "Windows 11 Pro",
+          "os_version": "10.0.26100",
+          "ip": "10.1.4.23"
+        },
+        "direction": "inbound",
+        "protocol": "tcp",
+        "src": {
+          "ip": "203.0.113.99",
+          "port": 54321
+        },
+        "dst": {
+          "ip": "10.1.4.23",
+          "port": 443
+        }
+      }
+    }
+  ]
+}

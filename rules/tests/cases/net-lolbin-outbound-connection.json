@@ -1,0 +1,208 @@
+{
+  "rule_id": "net-lolbin-outbound-connection",
+  "rule_version": "1.0.0",
+  "must_match": [
+    {
+      "name": "certutil connecting to external host",
+      "event": {
+        "event_id": "00000000-0000-4000-8000-000000000046",
+        "tenant_id": "8c9d0e1f-2a3b-4c5d-6e7f-8a9b0c1d2e3f",
+        "schema_version": "1.0.0",
+        "event_class": "network_activity",
+        "activity": "connection_opened",
+        "event_time": "2026-07-08T09:14:03.221Z",
+        "ingest_time": "2026-07-08T09:14:05.100Z",
+        "source_type": "agent",
+        "source_event_id": "fixture-000046",
+        "batch_id": "0b7e3c1a-9d2f-4a5b-8c6d-1e2f3a4b5c6d",
+        "source": {
+          "device_id": "dev_FIXTURE01",
+          "agent_version": "0.3.1"
+        },
+        "host": {
+          "hostname": "acme-ws-01",
+          "os_family": "windows",
+          "os_name": "Windows 11 Pro",
+          "os_version": "10.0.26100",
+          "ip": "10.1.4.23"
+        },
+        "direction": "outbound",
+        "protocol": "tcp",
+        "src": {
+          "ip": "10.1.4.23",
+          "port": 51544
+        },
+        "dst": {
+          "ip": "198.51.100.7",
+          "port": 80
+        },
+        "process": {
+          "pid": 4312,
+          "name": "certutil.exe",
+          "exe_path": "C:\\Windows\\System32\\certutil.exe"
+        }
+      }
+    },
+    {
+      "name": "wscript connecting to external host",
+      "event": {
+        "event_id": "00000000-0000-4000-8000-000000000047",
+        "tenant_id": "8c9d0e1f-2a3b-4c5d-6e7f-8a9b0c1d2e3f",
+        "schema_version": "1.0.0",
+        "event_class": "network_activity",
+        "activity": "connection_opened",
+        "event_time": "2026-07-08T09:14:03.221Z",
+        "ingest_time": "2026-07-08T09:14:05.100Z",
+        "source_type": "agent",
+        "source_event_id": "fixture-000047",
+        "batch_id": "0b7e3c1a-9d2f-4a5b-8c6d-1e2f3a4b5c6d",
+        "source": {
+          "device_id": "dev_FIXTURE01",
+          "agent_version": "0.3.1"
+        },
+        "host": {
+          "hostname": "acme-ws-01",
+          "os_family": "windows",
+          "os_name": "Windows 11 Pro",
+          "os_version": "10.0.26100",
+          "ip": "10.1.4.23"
+        },
+        "direction": "outbound",
+        "protocol": "tcp",
+        "src": {
+          "ip": "10.1.4.23",
+          "port": 51544
+        },
+        "dst": {
+          "ip": "198.51.100.9",
+          "port": 443
+        },
+        "process": {
+          "pid": 4312,
+          "name": "wscript.exe",
+          "exe_path": "C:\\Windows\\System32\\wscript.exe"
+        }
+      }
+    }
+  ],
+  "must_not_match": [
+    {
+      "name": "browser outbound (benign process)",
+      "event": {
+        "event_id": "00000000-0000-4000-8000-000000000048",
+        "tenant_id": "8c9d0e1f-2a3b-4c5d-6e7f-8a9b0c1d2e3f",
+        "schema_version": "1.0.0",
+        "event_class": "network_activity",
+        "activity": "connection_opened",
+        "event_time": "2026-07-08T09:14:03.221Z",
+        "ingest_time": "2026-07-08T09:14:05.100Z",
+        "source_type": "agent",
+        "source_event_id": "fixture-000048",
+        "batch_id": "0b7e3c1a-9d2f-4a5b-8c6d-1e2f3a4b5c6d",
+        "source": {
+          "device_id": "dev_FIXTURE01",
+          "agent_version": "0.3.1"
+        },
+        "host": {
+          "hostname": "acme-ws-01",
+          "os_family": "windows",
+          "os_name": "Windows 11 Pro",
+          "os_version": "10.0.26100",
+          "ip": "10.1.4.23"
+        },
+        "direction": "outbound",
+        "protocol": "tcp",
+        "src": {
+          "ip": "10.1.4.23",
+          "port": 51544
+        },
+        "dst": {
+          "ip": "198.51.100.7",
+          "port": 443
+        },
+        "process": {
+          "pid": 4312,
+          "name": "chrome.exe",
+          "exe_path": "C:\\Windows\\System32\\chrome.exe"
+        }
+      }
+    },
+    {
+      "name": "certutil to internal CRL host",
+      "event": {
+        "event_id": "00000000-0000-4000-8000-000000000049",
+        "tenant_id": "8c9d0e1f-2a3b-4c5d-6e7f-8a9b0c1d2e3f",
+        "schema_version": "1.0.0",
+        "event_class": "network_activity",
+        "activity": "connection_opened",
+        "event_time": "2026-07-08T09:14:03.221Z",
+        "ingest_time": "2026-07-08T09:14:05.100Z",
+        "source_type": "agent",
+        "source_event_id": "fixture-000049",
+        "batch_id": "0b7e3c1a-9d2f-4a5b-8c6d-1e2f3a4b5c6d",
+        "source": {
+          "device_id": "dev_FIXTURE01",
+          "agent_version": "0.3.1"
+        },
+        "host": {
+          "hostname": "acme-ws-01",
+          "os_family": "windows",
+          "os_name": "Windows 11 Pro",
+          "os_version": "10.0.26100",
+          "ip": "10.1.4.23"
+        },
+        "direction": "outbound",
+        "protocol": "tcp",
+        "src": {
+          "ip": "10.1.4.23",
+          "port": 51544
+        },
+        "dst": {
+          "ip": "10.1.2.3",
+          "port": 80
+        },
+        "process": {
+          "pid": 4312,
+          "name": "certutil.exe",
+          "exe_path": "C:\\Windows\\System32\\certutil.exe"
+        }
+      }
+    },
+    {
+      "name": "external connection with no owning process resolved",
+      "event": {
+        "event_id": "00000000-0000-4000-8000-000000000050",
+        "tenant_id": "8c9d0e1f-2a3b-4c5d-6e7f-8a9b0c1d2e3f",
+        "schema_version": "1.0.0",
+        "event_class": "network_activity",
+        "activity": "connection_opened",
+        "event_time": "2026-07-08T09:14:03.221Z",
+        "ingest_time": "2026-07-08T09:14:05.100Z",
+        "source_type": "agent",
+        "source_event_id": "fixture-000050",
+        "batch_id": "0b7e3c1a-9d2f-4a5b-8c6d-1e2f3a4b5c6d",
+        "source": {
+          "device_id": "dev_FIXTURE01",
+          "agent_version": "0.3.1"
+        },
+        "host": {
+          "hostname": "acme-ws-01",
+          "os_family": "windows",
+          "os_name": "Windows 11 Pro",
+          "os_version": "10.0.26100",
+          "ip": "10.1.4.23"
+        },
+        "direction": "outbound",
+        "protocol": "tcp",
+        "src": {
+          "ip": "10.1.4.23",
+          "port": 51544
+        },
+        "dst": {
+          "ip": "198.51.100.7",
+          "port": 80
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+id: proc-office-app-spawns-shell
+version: "1.0.0"
+title: Office Application Spawns Shell or Script Host
+description: >
+  Detects a Microsoft Office application (Word, Excel, PowerPoint, Outlook, Access,
+  Publisher, OneNote, Visio) starting a command shell, script interpreter, or
+  LOLBin. Office products almost never need to spawn these children; this is the
+  canonical macro/exploit phishing execution chain and one of the highest-value
+  detections for SMEs.
+severity: high
+event_class: process_activity
+min_schema_version: "1.0.0"
+mitre_technique_ids:
+  - T1566.001
+  - T1204.002
+entity:
+  - host.hostname
+  - user.name
+detection:
+  condition:
+    all:
+      - field: parent.name
+        op: iin
+        value: ["winword.exe", "excel.exe", "powerpnt.exe", "outlook.exe", "msaccess.exe", "mspub.exe", "onenote.exe", "visio.exe"]
+      - field: process.name
+        op: iin
+        value: ["cmd.exe", "powershell.exe", "pwsh.exe", "wscript.exe", "cscript.exe", "mshta.exe", "rundll32.exe", "regsvr32.exe", "bitsadmin.exe", "certutil.exe"]
+false_positives:
+  - Line-of-business Office macros or add-ins that intentionally shell out (e.g., an
+    Excel macro running a batch job). These are stable per tenant; close as
+    expected_behavior so the (rule, entity) pair is captured for tuning (AC-46).
+references:
+  - https://attack.mitre.org/techniques/T1566/001/
+  - https://attack.mitre.org/techniques/T1204/002/
+  - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_office_shell.yml

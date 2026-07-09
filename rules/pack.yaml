@@ -1,0 +1,111 @@
+schema: rule-pack/v1
+pack_version: "1.0.0"
+# Placeholder in git; the publish operation stamps the real RFC3339 UTC timestamp
+# and records the manifest SHA-256 in PG (SEC-27, AC-39).
+generated_at: "1970-01-01T00:00:00Z"
+min_schema_version: "1.0.0"
+rules:
+  # --- process_activity (12) ---
+  - id: proc-powershell-encoded-command
+    version: "1.0.0"
+    path: rules/proc-powershell-encoded-command.yml
+    enabled: true
+  - id: proc-powershell-download-cradle
+    version: "1.0.0"
+    path: rules/proc-powershell-download-cradle.yml
+    enabled: true
+  - id: proc-office-app-spawns-shell
+    version: "1.0.0"
+    path: rules/proc-office-app-spawns-shell.yml
+    enabled: true
+  - id: proc-certutil-download-or-decode
+    version: "1.0.0"
+    path: rules/proc-certutil-download-or-decode.yml
+    enabled: true
+  - id: proc-rundll32-suspicious-execution
+    version: "1.0.0"
+    path: rules/proc-rundll32-suspicious-execution.yml
+    enabled: true
+  - id: proc-mshta-remote-or-inline-script
+    version: "1.0.0"
+    path: rules/proc-mshta-remote-or-inline-script.yml
+    enabled: true
+  - id: proc-wmic-process-create
+    version: "1.0.0"
+    path: rules/proc-wmic-process-create.yml
+    enabled: true
+  - id: proc-schtasks-suspicious-task
+    version: "1.0.0"
+    path: rules/proc-schtasks-suspicious-task.yml
+    enabled: true
+  - id: proc-credential-dumping-tool
+    version: "1.0.0"
+    path: rules/proc-credential-dumping-tool.yml
+    enabled: true
+  - id: proc-lsass-memory-dump
+    version: "1.0.0"
+    path: rules/proc-lsass-memory-dump.yml
+    enabled: true
+  - id: proc-script-host-user-writable-path
+    version: "1.0.0"
+    path: rules/proc-script-host-user-writable-path.yml
+    enabled: true
+  - id: proc-shadow-copy-deletion
+    version: "1.0.0"
+    path: rules/proc-shadow-copy-deletion.yml
+    enabled: true
+  # --- network_activity (6) ---
+  - id: net-outbound-known-c2-port
+    version: "1.0.0"
+    path: rules/net-outbound-known-c2-port.yml
+    enabled: true
+  - id: net-lolbin-outbound-connection
+    version: "1.0.0"
+    path: rules/net-lolbin-outbound-connection.yml
+    enabled: true
+  - id: net-smb-to-external
+    version: "1.0.0"
+    path: rules/net-smb-to-external.yml
+    enabled: true
+  - id: net-rdp-inbound-from-external
+    version: "1.0.0"
+    path: rules/net-rdp-inbound-from-external.yml
+    enabled: true
+  - id: net-large-outbound-transfer
+    version: "1.0.0"
+    path: rules/net-large-outbound-transfer.yml
+    enabled: true
+  - id: net-direct-outbound-smtp
+    version: "1.0.0"
+    path: rules/net-direct-outbound-smtp.yml
+    enabled: true
+  # --- authentication (5) ---
+  - id: auth-failed-logon-disabled-account
+    version: "1.0.0"
+    path: rules/auth-failed-logon-disabled-account.yml
+    enabled: true
+  - id: auth-account-lockout
+    version: "1.0.0"
+    path: rules/auth-account-lockout.yml
+    enabled: true
+  - id: auth-external-remote-logon
+    version: "1.0.0"
+    path: rules/auth-external-remote-logon.yml
+    enabled: true
+  - id: auth-failed-admin-logon-external
+    version: "1.0.0"
+    path: rules/auth-failed-admin-logon-external.yml
+    enabled: true
+  - id: auth-builtin-admin-network-logon
+    version: "1.0.0"
+    path: rules/auth-builtin-admin-network-logon.yml
+    enabled: true
+  # --- generic (2) ---
+  - id: gen-hacktool-indicator-in-logs
+    version: "1.0.0"
+    path: rules/gen-hacktool-indicator-in-logs.yml
+    enabled: true
+  - id: gen-ssh-auth-failure
+    version: "1.0.0"
+    path: rules/gen-ssh-auth-failure.yml
+    enabled: true

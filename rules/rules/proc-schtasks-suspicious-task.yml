@@ -1,0 +1,38 @@
+id: proc-schtasks-suspicious-task
+version: "1.0.0"
+title: Scheduled Task Created With Suspicious Action
+description: >
+  Detects schtasks.exe /create where the task action references a script
+  interpreter, LOLBin, user-writable path, or URL. Scheduled tasks are the most
+  common commodity-malware persistence mechanism on Windows. Restricting to
+  suspicious action content (rather than all /create invocations) keeps routine
+  software-update task registrations out of the queue; that trade-off is the
+  documented rationale for medium severity and the keyword list below.
+severity: medium
+event_class: process_activity
+min_schema_version: "1.0.0"
+mitre_technique_ids:
+  - T1053.005
+entity:
+  - host.hostname
+  - user.name
+detection:
+  condition:
+    all:
+      - field: process.name
+        op: iequals
+        value: "schtasks.exe"
+      - field: process.cmd_line
+        op: icontains
+        value: "/create"
+      - field: process.cmd_line
+        op: icontains
+        value: ["powershell", "cmd /c", "cmd.exe /c", "wscript", "cscript", "mshta", "rundll32", "regsvr32", "certutil", "bitsadmin", '\appdata\', '\temp\', '\users\public\', "http"]
+false_positives:
+  - Software updaters (browsers, vendor agents) register tasks pointing at
+    executables under AppData/ProgramData, and IT logon-maintenance tasks may invoke
+    PowerShell. Expect a modest steady rate; close recurring ones as
+    expected_behavior — they are the primary tuning input for this rule (AC-46).
+references:
+  - https://attack.mitre.org/techniques/T1053/005/
+  - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_schtasks_creation.yml

@@ -1,0 +1,86 @@
+"""soc_schemas — canonical models transcribed from docs/contracts/event-schema.md.
+
+The contract document is the single source of truth; this package is
+generated/transcribed FROM it and must never diverge silently. On conflict,
+the contract wins (event-schema.md header).
+"""
+
+from soc_schemas.errors import (
+    ERROR_HTTP_STATUS,
+    ApiError,
+    ErrorBody,
+    ErrorCode,
+    ErrorEnvelope,
+    error_envelope,
+)
+from soc_schemas.events import (
+    SCHEMA_VERSION,
+    AuthActivity,
+    AuthenticationEvent,
+    AuthStatus,
+    Direction,
+    Event,
+    EventClass,
+    EventEnvelope,
+    FailureReason,
+    GenericEvent,
+    Host,
+    LogonType,
+    NetworkActivity,
+    NetworkActivityEvent,
+    OsFamily,
+    ProcessActivity,
+    ProcessActivityEvent,
+    Protocol,
+    SeverityHint,
+    SourceInfo,
+    SourceType,
+    User,
+)
+from soc_schemas.identity import derive_es_document_id
+from soc_schemas.normalize import (
+    CLIENT_ASSIGNED_FIELDS,
+    MalformedEventError,
+    move_unknown_to_unmapped,
+    parse_event,
+    strip_client_assigned_fields,
+    truncate_generic_raw,
+)
+
+__all__ = [
+    "CLIENT_ASSIGNED_FIELDS",
+    "ERROR_HTTP_STATUS",
+    "SCHEMA_VERSION",
+    "ApiError",
+    "AuthActivity",
+    "AuthStatus",
+    "AuthenticationEvent",
+    "Direction",
+    "ErrorBody",
+    "ErrorCode",
+    "ErrorEnvelope",
+    "Event",
+    "EventClass",
+    "EventEnvelope",
+    "FailureReason",
+    "GenericEvent",
+    "Host",
+    "LogonType",
+    "MalformedEventError",
+    "NetworkActivity",
+    "NetworkActivityEvent",
+    "OsFamily",
+    "ProcessActivity",
+    "ProcessActivityEvent",
+    "Protocol",
+    "SeverityHint",
+    "SourceInfo",
+    "SourceType",
+    "User",
+    "derive_es_document_id",
+    "error_envelope",
+    "move_unknown_to_unmapped",
+    "parse_event",
+    "strip_client_assigned_fields",
+    "truncate_generic_raw",
+]

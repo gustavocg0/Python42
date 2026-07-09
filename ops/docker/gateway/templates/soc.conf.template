@@ -1,0 +1,155 @@
+# ingest-gateway vhosts (envsubst template — ONLY ${GATEWAY_AUTH_SECRET} is an
+# environment substitution; every other $var is a native nginx variable).
+#
+# SEC-14 (B-3): reserved identity headers (X-Device-Id, X-Device-Tenant,
+# X-Client-Cert-Serial) and X-Gateway-Auth are UNCONDITIONALLY cleared on
+# every proxied route, then set only from the verified client cert on agent
+# routes. NOTE nginx inheritance: proxy_set_header directives are NOT merged
+# across levels, so every location repeats the full header set on purpose —
+# do not "deduplicate" into the server level.
+#
+# SEC-40 item 1: the gateway->dataplane hop carries the per-deployment
+# X-Gateway-Auth secret; dataplane-api fails closed without it.
+
+js_path /etc/nginx/njs;
+js_import identity from identity.js;
+js_set $device_id      identity.deviceId;
+js_set $device_tenant  identity.deviceTenant;
+js_set $device_serial  identity.deviceSerial;
+
+upstream web_upstream          { server web:3000; }
+upstream controlplane_upstream { server controlplane-api:8001; }
+upstream dataplane_upstream    { server dataplane-api:8000; }
+
+# --------------------------------------------------------------------------
+# :8080 — SOC console (Next.js). Browser origin http://localhost:8080.
+# --------------------------------------------------------------------------
+server {
+    listen 8080;
+    server_name _;
+
+    # Gateway self-health (no upstream dependency).
+    location = /gw-healthz {
+        default_type text/plain;
+        return 200 "ok\n";
+    }
+
+    location / {
+        proxy_http_version 1.1;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Device-Id          "";
+        proxy_set_header X-Device-Tenant      "";
+        proxy_set_header X-Client-Cert-Serial "";
+        proxy_set_header X-Gateway-Auth       "";
+        proxy_pass http://web_upstream;
+    }
+}
+
+# --------------------------------------------------------------------------
+# :8081 — controlplane public API (signup, auth, users, entitlements).
+# --------------------------------------------------------------------------
+server {
+    listen 8081;
+    server_name _;
+
+    # Internal surface is a separate process/listener (SEC-30/40); never
+    # routable here, but fail closed anyway.
+    location /internal/ { return 404; }
+
+    location / {
+        proxy_http_version 1.1;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Device-Id          "";
+        proxy_set_header X-Device-Tenant      "";
+        proxy_set_header X-Client-Cert-Serial "";
+        proxy_set_header X-Gateway-Auth       "";
+        proxy_pass http://controlplane_upstream;
+    }
+}
+
+# --------------------------------------------------------------------------
+# :8082 — dataplane public API (console reads/writes + generic X-Ingest-Key
+# ingest). Gateway auth injected so GatewayAuthMiddleware trusts the hop.
+# --------------------------------------------------------------------------
+server {
+    listen 8082;
+    server_name _;
+    client_max_body_size 6m;   # ingest batches are <=5MB (AC-30) + envelope
+
+    location /internal/ { return 404; }
+
+    location / {
+        proxy_http_version 1.1;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        # Strip inbound identity spoofing attempts, then authenticate the hop.
+        proxy_set_header X-Device-Id          "";
+        proxy_set_header X-Device-Tenant      "";
+        proxy_set_header X-Client-Cert-Serial "";
+        proxy_set_header X-Gateway-Auth       "${GATEWAY_AUTH_SECRET}";
+        proxy_pass http://dataplane_upstream;
+    }
+}
+
+# --------------------------------------------------------------------------
+# :8443 — agent mTLS listener (ADR-0006). Server cert + client CA come from
+# the dev-ca volume (ops/docker/dev-ca-bootstrap — non-production per SEC-9).
+# ssl_verify_client optional: /v1/agent/enroll is contractually plain TLS
+# (token in body, no cert yet); every OTHER agent route hard-requires a
+# verified cert.
+# --------------------------------------------------------------------------
+server {
+    listen 8443 ssl;
+    server_name _;
+
+    ssl_certificate         /certs/gateway.crt;
+    ssl_certificate_key     /certs/gateway.key;
+    ssl_client_certificate  /certs/dev-ca.crt;
+    ssl_verify_client       optional;
+    ssl_verify_depth        1;
+    ssl_protocols           TLSv1.2 TLSv1.3;
+
+    client_max_body_size 6m;
+
+    # Only agent routes exist on this listener.
+    location / { return 404; }
+
+    # Enrollment: no client cert yet (proof-of-possession CSR in body,
+    # SEC-8/12). No identity headers are set — enroll auths via the token.
+    location = /v1/agent/enroll {
+        proxy_http_version 1.1;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Device-Id          "";
+        proxy_set_header X-Device-Tenant      "";
+        proxy_set_header X-Client-Cert-Serial "";
+        proxy_set_header X-Gateway-Auth       "${GATEWAY_AUTH_SECRET}";
+        proxy_pass http://dataplane_upstream;
+    }
+
+    # Everything else under /v1/agent/ requires a VERIFIED device cert;
+    # identity headers are then set exclusively from that cert (SEC-14).
+    location /v1/agent/ {
+        # Only used for the local `return` below; proxied responses carry the
+        # upstream Content-Type.
+        default_type application/json;
+        if ($ssl_client_verify != SUCCESS) {
+            return 401 '{"error":{"code":"DEVICE_IDENTITY_INVALID","message":"A verified device certificate is required on agent routes."}}';
+        }
+        proxy_http_version 1.1;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Device-Id          $device_id;
+        proxy_set_header X-Device-Tenant      $device_tenant;
+        proxy_set_header X-Client-Cert-Serial $device_serial;
+        proxy_set_header X-Gateway-Auth       "${GATEWAY_AUTH_SECRET}";
+        proxy_pass http://dataplane_upstream;
+    }
+}

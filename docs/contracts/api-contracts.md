@@ -51,6 +51,8 @@
 | 429 | `RATE_LIMITED` | login backoff (AC-77), enrollment per-IP/per-token limits (SEC-12), general API limits |
 | 503 | `SERVICE_UNAVAILABLE` | agent/ingest routes when device/key/tenant status stores are down — fail-closed deny (B-1/SEC-10/17) + `Retry-After`; agents buffer and retry |
 | 503 | `ENTITLEMENTS_UNAVAILABLE` | fail-closed with empty cache (ADR-0005) + `Retry-After` |
+| 401 | `AUTH_REQUIRED` | **(clarification, Architect-ratified 2026-07-08)** also returned on agent routes when the request lacks a valid `X-Gateway-Auth` header (SEC-14 gateway hop missing) — a missing gateway hop is not a device-identity verdict, so `DEVICE_*` codes are not used; also returned on CSRF-token failures for cookie-authed mutations |
+| 500 | `INTERNAL_ERROR` | **(added by Architect ratification 2026-07-08)** unhandled server error; never reuses `SERVICE_UNAVAILABLE` (which signals fail-closed dependency denial and drives client buffer-and-retry semantics) |
 
 ## 3. Signup & provisioning (controlplane-api)
 
@@ -81,7 +83,8 @@ Req: `{"email": str}` → 202 always (no account enumeration, SEC-6).
 | POST /v1/users `{email, role: "admin"\|"analyst"}` **[A]** | admin | 201; invite email |
 | PATCH /v1/users/{user_id} `{role?}` **[A]** | admin | role change invalidates the user's sessions (SEC-3) |
 | DELETE /v1/users/{user_id} **[A]** | admin | 204; sessions invalidated |
-| POST /v1/auth/change-password **[A]** | any | invalidates other sessions (AC-77) |
+| POST /v1/auth/change-password **[A]** | any | invalidates other sessions (AC-77); **exempt from the frozen-tenant write block** (Architect-ratified 2026-07-08: compromised-account rotation must work on frozen tenants; logout likewise exempt) |
+| POST /v1/auth/accept-invite `{token, password}` **[A]** | public | *(added by Architect ratification 2026-07-08)* Invited user sets password (full policy + breached check) and becomes `active`; single-use expiring token from the invite email (`/invite/accept?token=...&user_id=usr_...`); 410 `VERIFICATION_EXPIRED` / 409 `VERIFICATION_ALREADY_USED` reuse the signup taxonomy |
 
 ## 5. Entitlements (controlplane-api)
 
@@ -197,6 +200,9 @@ Query params: `state=new|acknowledged|closed` (repeatable), `severity=` (rule se
 ### GET /v1/alerts/{id} — any role
 Full object + `siblings`: alerts sharing `correlation_group_id` (AC-43/74) + `history`: audit trail entries for this alert.
 
+### GET /v1/alerts/{id}/events — any role *(added by Architect ratification 2026-07-08, closes the AC-74 gap)*
+Returns the normalized event bodies for the alert's `event_refs`, read via the tenant-scoped ES alias (fail-closed per SEC-24). Cursor-paginated; items are full normalized events per event-schema.md. Unknown/foreign alert id ⇒ 404. Events already purged by retention are omitted; response carries `"missing_event_ids": [...]` so the UI can say "no longer retained".
+
 ### State transitions (AC-45/47) — role: admin or analyst, all **[A]**
 
 | Endpoint | Valid from | Result |
@@ -260,7 +266,9 @@ Req: `{"agent_version": str, "os_version": str, "providers": [{"name": "etw"|"si
 - 200 `{"config_version": str, "actions": []}` (`actions` reserved for future policy pushes; empty in MVP)
 - 401 `DEVICE_REVOKED` ⇒ agent stops sending, per AC-59; 503 `SERVICE_UNAVAILABLE` ⇒ retry with backoff
 
-**POST /v1/agent/renew-credential** — auth: mTLS (current valid, non-revoked cert; SEC-10 check runs first) — Req `{"csr_pem": str}` → 200 new cert (same device identity per SEC-11; old serial ≤24h overlap; audit-logged with old/new serial).
+**POST /v1/agent/renew-credential** — auth: mTLS (current valid, non-revoked cert; SEC-10 check runs first) — Req `{"csr_pem": str}` → 200 `{"certificate_pem": str, "ca_chain_pem": str, "certificate_expires_at": rfc3339}` *(response body ratified by Architect 2026-07-08 — mirrors enroll's credential fields)* (same device identity per SEC-11; old serial ≤24h overlap; audit-logged with old/new serial).
+
+*Clarification (Architect-ratified 2026-07-08):* `ingest_url` returned by enroll is a **base URL**; the agent appends `/v1/agent/events`, `/v1/agent/heartbeat`, `/v1/agent/renew-credential` to it.
 
 Offline marking (AC-61): server job flags `agent_status=offline` after 3 missed intervals (≤1 min detection); next heartbeat restores `healthy`.
 
@@ -285,9 +293,21 @@ Auth: HMAC-signed short-lived service tokens per design §5.1 (SEC-40); never mo
 | Endpoint | Purpose |
 |---|---|
 | GET /internal/v1/tenants/{id}/entitlements | Entitlements client source (ADR-0005) |
+| PUT /internal/v1/tenants/{id}/provision | *(added by Architect ratification 2026-07-08)* Idempotent data-plane provisioning step called by the controlplane saga: creates the tenant's first monthly ES index + `events-{tenant}` alias and seeds `tenantdata.onboarding_steps`. Keeps ES ownership inside the data plane (ADR-0001/0003 boundary); controlplane never talks to ES directly |
 | PUT /internal/v1/tenants/{id}/plan | Operator plan change (AC-11) |
 | PUT /internal/v1/tenants/{id}/abuse-freeze | Operator abuse freeze/unfreeze (SEC-39) |
 | GET /internal/v1/metering/llm?tenant_id=&from=&to= | Per-tenant/day: `{tokens_in, tokens_out, model_id, calls, cost_usd, latency_ms_p95}` per AC-51 |
 | GET /internal/v1/metering/deep-investigation?... | Run records (AC-53) |
 | GET /internal/v1/fp-feedback?rule_id=&from=&to= | `{rule_id, entity, reason, comment, at}` export for detection-engineering (AC-46) |
 | GET /healthz, /readyz (all services) | Compose/Helm probes (AC-90) |
+
+## 14. Clarifications (Architect-ratified, 2026-07-08)
+
+Raised during web-console implementation; binding for server implementations:
+
+1. **CSRF mechanism:** double-submit cookie named `csrf_token` (non-HttpOnly, readable by the console origin); clients echo it as `X-CSRF-Token` on every mutating cookie-authed request. Controlplane issues/rotates it at login.
+2. **CORS:** both APIs allow the console origin with `Access-Control-Allow-Credentials: true` and request headers `X-CSRF-Token`, `Content-Type`.
+3. **`GET /v1/me` shape:** mirrors the login payload — `{"user": {"id","email","role"}, "tenant": {"id","name","status","abuse_frozen","trial_expires_at"?}}`.
+4. **Asset identities:** each `identities[]` entry carries a server-generated `id` (required by `POST /v1/assets/{id}/split`'s `identity_ids`); the §7 example predates this.
+5. **Verification email link format:** `/signup/verify?token=...&account_id=acc_...` on the console origin, so a fresh browser can verify and then poll provisioning status.
+6. **`GET /v1/alerts/{id}/events`** added in §8 to close the AC-74 gap (refs-only display is not sufficient).

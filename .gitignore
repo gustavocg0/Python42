@@ -18,3 +18,8 @@ __pycache__/
 .venv/
 dist/
 build/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# NOTE: uv.lock IS committed (reproducible workspace installs) — do not ignore it.

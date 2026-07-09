@@ -1,0 +1,34 @@
+id: proc-script-host-user-writable-path
+version: "1.0.0"
+title: Windows Script Host Running Script From User-Writable Path
+description: >
+  Detects wscript.exe or cscript.exe executing a script located under AppData, Temp,
+  Users\Public, or a Downloads directory. Phishing payloads (.js/.vbs in archives or
+  ISO files) land and run from exactly these paths, while legitimate admin scripts
+  overwhelmingly live in system, network-share, or program directories.
+severity: medium
+event_class: process_activity
+min_schema_version: "1.0.0"
+mitre_technique_ids:
+  - T1059.005
+  - T1059.007
+entity:
+  - host.hostname
+  - user.name
+detection:
+  condition:
+    all:
+      - field: process.name
+        op: iin
+        value: ["wscript.exe", "cscript.exe"]
+      - field: process.cmd_line
+        op: icontains
+        value: ['\appdata\', '\temp\', '\users\public\', '\downloads\']
+false_positives:
+  - Installers that stage a VBScript helper in %TEMP%, and some logon scripts copied
+    to the local profile before execution — the reason this is medium, not high.
+    Recurring per-tenant paths closed as expected_behavior feed tuning (AC-46).
+references:
+  - https://attack.mitre.org/techniques/T1059/005/
+  - https://attack.mitre.org/techniques/T1059/007/
+  - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_wscript_cscript_susp_dirs.yml

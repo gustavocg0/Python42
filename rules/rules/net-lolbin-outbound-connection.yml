@@ -1,0 +1,42 @@
+id: net-lolbin-outbound-connection
+version: "1.0.0"
+title: LOLBin Making Outbound Connection to External Address
+description: >
+  Detects an outbound connection to an external address owned by a
+  living-off-the-land binary that has no routine reason to talk to the internet
+  (certutil, mshta, regsvr32, rundll32, bitsadmin, wscript, cscript). These signed
+  binaries reaching external hosts almost always means payload download or C2 via
+  proxy execution. PowerShell is deliberately excluded here (too large a benign
+  population) and covered by the more specific proc-powershell-* rules.
+severity: high
+event_class: network_activity
+min_schema_version: "1.0.0"
+mitre_technique_ids:
+  - T1105
+  - T1218
+entity:
+  - host.hostname
+  - dst.ip
+detection:
+  condition:
+    all:
+      - field: direction
+        op: equals
+        value: "outbound"
+      - field: process.name
+        op: iin
+        value: ["certutil.exe", "mshta.exe", "regsvr32.exe", "rundll32.exe", "bitsadmin.exe", "wscript.exe", "cscript.exe"]
+      - not:
+          field: dst.ip
+          op: istartswith
+          value: ["10.", "192.168.", "172.16.", "172.17.", "172.18.", "172.19.", "172.20.", "172.21.", "172.22.", "172.23.", "172.24.", "172.25.", "172.26.", "172.27.", "172.28.", "172.29.", "172.30.", "172.31.", "127.", "169.254.", "fe80:", "fc", "fd", "::1"]
+false_positives:
+  - BITS (bitsadmin) fetching legitimate vendor updates, wscript/cscript automation
+    calling external web services, and rundll32 hosting a networking component are
+    plausible per-tenant patterns. Certutil CRL/OCSP fetches normally happen inside
+    svchost, not certutil.exe, so certutil hits remain strong. Close recurring
+    per-tenant automation as expected_behavior to feed tuning (AC-46).
+references:
+  - https://attack.mitre.org/techniques/T1105/
+  - https://attack.mitre.org/techniques/T1218/
+  - https://lolbas-project.github.io/

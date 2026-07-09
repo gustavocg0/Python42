@@ -1,0 +1,36 @@
+id: proc-wmic-process-create
+version: "1.0.0"
+title: WMIC Process Create Execution
+description: >
+  Detects wmic.exe used to create a process ("process ... create"), locally or on a
+  remote node (/node:). WMI process creation is a staple of lateral movement and
+  fileless execution chains and is essentially never typed by SME end users. WMIC is
+  deprecated on current Windows builds, which makes any use notable.
+severity: medium
+event_class: process_activity
+min_schema_version: "1.0.0"
+mitre_technique_ids:
+  - T1047
+entity:
+  - host.hostname
+  - user.name
+detection:
+  condition:
+    all:
+      - field: process.name
+        op: iequals
+        value: "wmic.exe"
+      - field: process.cmd_line
+        op: icontains
+        value: "process"
+      - field: process.cmd_line
+        op: icontains
+        value: "create"
+false_positives:
+  - Legacy admin/inventory scripts and some monitoring agents still use
+    "wmic process call create" for remote execution. These are recurring and
+    identifiable per tenant; close as expected_behavior to feed tuning (AC-46).
+    Medium severity reflects this known benign population.
+references:
+  - https://attack.mitre.org/techniques/T1047/
+  - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_wmic_process_creation.yml

@@ -1,0 +1,43 @@
+id: proc-certutil-download-or-decode
+version: "1.0.0"
+title: Certutil Used to Download or Decode a Payload
+description: >
+  Detects certutil.exe abused as a downloader (urlcache/verifyctl with an http(s)
+  URL) or as a base64 decoder (-decode). Certutil is a signed Windows binary
+  routinely abused to fetch and unpack second-stage payloads while evading
+  application allowlists. Certificate-management uses of certutil do not carry
+  these argument combinations.
+severity: high
+event_class: process_activity
+min_schema_version: "1.0.0"
+mitre_technique_ids:
+  - T1105
+  - T1140
+entity:
+  - host.hostname
+  - user.name
+detection:
+  condition:
+    all:
+      - field: process.name
+        op: iequals
+        value: "certutil.exe"
+      - any:
+          - all:
+              - field: process.cmd_line
+                op: icontains
+                value: ["urlcache", "verifyctl"]
+              - field: process.cmd_line
+                op: icontains
+                value: "http"
+          - field: process.cmd_line
+            op: icontains
+            value: "-decode"
+false_positives:
+  - Rare admin use of "certutil -urlcache" to test proxy connectivity, or scripted
+    certificate tooling that decodes PEM blobs with -decode. Both are uncommon on
+    SME endpoints; close as expected_behavior when a known admin script is the source.
+references:
+  - https://attack.mitre.org/techniques/T1105/
+  - https://attack.mitre.org/techniques/T1140/
+  - https://lolbas-project.github.io/lolbas/Binaries/Certutil/

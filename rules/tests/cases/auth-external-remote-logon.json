@@ -1,0 +1,139 @@
+{
+  "rule_id": "auth-external-remote-logon",
+  "rule_version": "1.0.0",
+  "must_match": [
+    {
+      "name": "successful RDP logon from public IP",
+      "event": {
+        "event_id": "00000000-0000-4000-8000-000000000068",
+        "tenant_id": "8c9d0e1f-2a3b-4c5d-6e7f-8a9b0c1d2e3f",
+        "schema_version": "1.0.0",
+        "event_class": "authentication",
+        "activity": "logon",
+        "event_time": "2026-07-08T09:14:03.221Z",
+        "ingest_time": "2026-07-08T09:14:05.100Z",
+        "source_type": "agent",
+        "source_event_id": "fixture-000068",
+        "batch_id": "0b7e3c1a-9d2f-4a5b-8c6d-1e2f3a4b5c6d",
+        "source": {
+          "device_id": "dev_FIXTURE01",
+          "agent_version": "0.3.1"
+        },
+        "host": {
+          "hostname": "acme-ws-01",
+          "os_family": "windows",
+          "os_name": "Windows 11 Pro",
+          "os_version": "10.0.26100",
+          "ip": "10.1.4.23"
+        },
+        "status": "success",
+        "logon_type": "remote_interactive",
+        "user": {
+          "name": "sam.jones",
+          "domain": "ACME"
+        },
+        "src_ip": "203.0.113.50"
+      }
+    }
+  ],
+  "must_not_match": [
+    {
+      "name": "successful RDP logon from VPN/LAN range",
+      "event": {
+        "event_id": "00000000-0000-4000-8000-000000000069",
+        "tenant_id": "8c9d0e1f-2a3b-4c5d-6e7f-8a9b0c1d2e3f",
+        "schema_version": "1.0.0",
+        "event_class": "authentication",
+        "activity": "logon",
+        "event_time": "2026-07-08T09:14:03.221Z",
+        "ingest_time": "2026-07-08T09:14:05.100Z",
+        "source_type": "agent",
+        "source_event_id": "fixture-000069",
+        "batch_id": "0b7e3c1a-9d2f-4a5b-8c6d-1e2f3a4b5c6d",
+        "source": {
+          "device_id": "dev_FIXTURE01",
+          "agent_version": "0.3.1"
+        },
+        "host": {
+          "hostname": "acme-ws-01",
+          "os_family": "windows",
+          "os_name": "Windows 11 Pro",
+          "os_version": "10.0.26100",
+          "ip": "10.1.4.23"
+        },
+        "status": "success",
+        "logon_type": "remote_interactive",
+        "user": {
+          "name": "sam.jones",
+          "domain": "ACME"
+        },
+        "src_ip": "192.168.1.10"
+      }
+    },
+    {
+      "name": "remote logon without recorded source IP (exists guard)",
+      "event": {
+        "event_id": "00000000-0000-4000-8000-000000000070",
+        "tenant_id": "8c9d0e1f-2a3b-4c5d-6e7f-8a9b0c1d2e3f",
+        "schema_version": "1.0.0",
+        "event_class": "authentication",
+        "activity": "logon",
+        "event_time": "2026-07-08T09:14:03.221Z",
+        "ingest_time": "2026-07-08T09:14:05.100Z",
+        "source_type": "agent",
+        "source_event_id": "fixture-000070",
+        "batch_id": "0b7e3c1a-9d2f-4a5b-8c6d-1e2f3a4b5c6d",
+        "source": {
+          "device_id": "dev_FIXTURE01",
+          "agent_version": "0.3.1"
+        },
+        "host": {
+          "hostname": "acme-ws-01",
+          "os_family": "windows",
+          "os_name": "Windows 11 Pro",
+          "os_version": "10.0.26100",
+          "ip": "10.1.4.23"
+        },
+        "status": "success",
+        "logon_type": "remote_interactive",
+        "user": {
+          "name": "sam.jones",
+          "domain": "ACME"
+        }
+      }
+    },
+    {
+      "name": "interactive console logon from public IP field absent anyway",
+      "event": {
+        "event_id": "00000000-0000-4000-8000-000000000071",
+        "tenant_id": "8c9d0e1f-2a3b-4c5d-6e7f-8a9b0c1d2e3f",
+        "schema_version": "1.0.0",
+        "event_class": "authentication",
+        "activity": "logon",
+        "event_time": "2026-07-08T09:14:03.221Z",
+        "ingest_time": "2026-07-08T09:14:05.100Z",
+        "source_type": "agent",
+        "source_event_id": "fixture-000071",
+        "batch_id": "0b7e3c1a-9d2f-4a5b-8c6d-1e2f3a4b5c6d",
+        "source": {
+          "device_id": "dev_FIXTURE01",
+          "agent_version": "0.3.1"
+        },
+        "host": {
+          "hostname": "acme-ws-01",
+          "os_family": "windows",
+          "os_name": "Windows 11 Pro",
+          "os_version": "10.0.26100",
+          "ip": "10.1.4.23"
+        },
+        "status": "success",
+        "logon_type": "interactive",
+        "user": {
+          "name": "sam.jones",
+          "domain": "ACME"
+        },
+        "src_ip": "203.0.113.50"
+      }
+    }
+  ]
+}

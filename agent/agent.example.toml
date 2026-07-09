@@ -1,0 +1,63 @@
+# agentd example configuration (Phase 1 skeleton).
+#
+# Copy to agent.toml and pass as the first CLI arg, or set SOC_AGENT_CONFIG.
+# Env overrides (win over file): SOC_AGENT_SERVER_URL,
+# SOC_AGENT_ENROLLMENT_TOKEN, SOC_AGENT_STATE_DIR, SOC_AGENT_PROVIDER,
+# SOC_AGENT_SIM_SEED.
+
+# Ingestion edge base URL. MUST be https:// in release builds (AC-69).
+# The agent posts to {server_url}/v1/agent/enroll for enrollment; after
+# enrollment it uses the server-returned `ingest_url` for events/heartbeat.
+server_url = "https://ingest.example.com"
+
+# Enrollment token from the console (POST /v1/enrollment-tokens). Needed only
+# until the device is enrolled; can be removed afterwards. Prefer the env var
+# SOC_AGENT_ENROLLMENT_TOKEN for GPO/Intune silent install so the token is not
+# written to disk (SEC-13 GPO-exposure guidance).
+# enrollment_token = "et_..."
+
+# Local state dir: device_key.pem, device_cert.pem, ca_chain.pem,
+# identity.json, and the disk buffer (unless [buffer].dir overrides).
+state_dir = "agent-state"
+
+# Telemetry provider (AC-62 — configuration, not compile-time):
+#   "etw"        -> Windows ETW (process events; see coverage gaps in README)
+#   "simulated"  -> cross-platform generator for CI/dev/demo (AC-64)
+provider = "simulated"
+
+# Optional extra TLS trust anchor(s), PEM bundle (compose dev CA or private
+# PKI). Same code path as production; the dev CA is non-production (SEC-9).
+# server_ca_pem_path = "dev-ca.pem"
+
+# Pre-enrollment heartbeat interval fallback; the server value from
+# enrollment overrides this.
+heartbeat_interval_seconds = 60
+
+[buffer]
+# dir defaults to {state_dir}/buffer if unset.
+# dir = "agent-state/buffer"
+max_bytes = 268435456        # 256 MiB cap (AC-66)
+segment_max_bytes = 4194304  # 4 MiB per segment file
+
+[delivery]
+max_batch_events = 1000      # hard ceiling 1000 (AC-30)
+max_batch_bytes = 5242880    # hard ceiling 5 MiB (AC-30)
+poll_interval_ms = 1000      # idle poll when buffer empty
+base_backoff_ms = 1000       # jittered backoff base (AC-68)
+max_backoff_ms = 300000      # backoff cap (5 min)
+channel_capacity = 8192      # provider -> buffer in-memory queue depth
+
+# ----- Simulated provider (QA/CI knobs, AC-64) -----------------------------
+[simulated]
+events_per_second = 5
+# seed = 0 -> random (entropy). NON-ZERO -> deterministic: a given seed
+# reproduces a byte-identical event sequence (modulo event_time), including
+# source_event_id UUIDs. Use a fixed seed in CI for reproducible e2e.
+seed = 0
+# Interleave suspicious scenarios (brute-force logon, Office->encoded
+# PowerShell + C2, lsass credential dump) that will trip detection rules.
+suspicious_patterns = true
+
+# ----- Debug builds ONLY (compiled out of release, AC-69) ------------------
+# [dev]
+# danger_accept_invalid_certs = false

@@ -1,0 +1,34 @@
+id: auth-failed-logon-disabled-account
+version: "1.0.0"
+title: Logon Attempt Against Disabled Account
+description: >
+  Detects a failed logon where the failure reason is a disabled account. Disabled
+  accounts (typically leavers) should receive zero logon attempts; activity against
+  them means stale credentials in use, credential-stuffing with an old breach dump,
+  or an insider trying a former colleague's account. Stateless per event - each
+  attempt matches on its own; the host+user entity collapses repeated attempts into
+  one alert with a rising occurrence count (AC-41/42).
+severity: medium
+event_class: authentication
+min_schema_version: "1.0.0"
+mitre_technique_ids:
+  - T1078
+entity:
+  - host.hostname
+  - user.name
+detection:
+  condition:
+    all:
+      - field: activity
+        op: equals
+        value: "logon_failed"
+      - field: failure_reason
+        op: equals
+        value: "account_disabled"
+false_positives:
+  - Services, scheduled tasks, or mapped drives still configured with a
+    departed employee's account keep retrying after offboarding - the most common
+    source. That is worth fixing anyway; close as expected_behavior naming the
+    stale system, which feeds tuning (AC-46).
+references:
+  - https://attack.mitre.org/techniques/T1078/

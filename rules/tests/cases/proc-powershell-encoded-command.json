@@ -1,0 +1,172 @@
+{
+  "rule_id": "proc-powershell-encoded-command",
+  "rule_version": "1.0.0",
+  "must_match": [
+    {
+      "name": "powershell with -enc payload",
+      "event": {
+        "event_id": "00000000-0000-4000-8000-000000000001",
+        "tenant_id": "8c9d0e1f-2a3b-4c5d-6e7f-8a9b0c1d2e3f",
+        "schema_version": "1.0.0",
+        "event_class": "process_activity",
+        "activity": "process_launched",
+        "event_time": "2026-07-08T09:14:03.221Z",
+        "ingest_time": "2026-07-08T09:14:05.100Z",
+        "source_type": "agent",
+        "source_event_id": "fixture-000001",
+        "batch_id": "0b7e3c1a-9d2f-4a5b-8c6d-1e2f3a4b5c6d",
+        "source": {
+          "device_id": "dev_FIXTURE01",
+          "agent_version": "0.3.1"
+        },
+        "host": {
+          "hostname": "acme-ws-01",
+          "os_family": "windows",
+          "os_name": "Windows 11 Pro",
+          "os_version": "10.0.26100",
+          "ip": "10.1.4.23"
+        },
+        "process": {
+          "pid": 4312,
+          "name": "powershell.exe",
+          "exe_path": "C:\\Windows\\System32\\powershell.exe",
+          "cmd_line": "powershell.exe -NoP -W Hidden -enc SQBFAFgAKABOAGUAdwAtAE8AYgBqAGUAYwB0ACkA"
+        },
+        "parent": {
+          "pid": 1180,
+          "name": "explorer.exe"
+        },
+        "user": {
+          "name": "sam.jones",
+          "domain": "ACME",
+          "uid": "S-1-5-21-1-2-3-1104"
+        }
+      }
+    },
+    {
+      "name": "pwsh with -EncodedCommand",
+      "event": {
+        "event_id": "00000000-0000-4000-8000-000000000002",
+        "tenant_id": "8c9d0e1f-2a3b-4c5d-6e7f-8a9b0c1d2e3f",
+        "schema_version": "1.0.0",
+        "event_class": "process_activity",
+        "activity": "process_launched",
+        "event_time": "2026-07-08T09:14:03.221Z",
+        "ingest_time": "2026-07-08T09:14:05.100Z",
+        "source_type": "agent",
+        "source_event_id": "fixture-000002",
+        "batch_id": "0b7e3c1a-9d2f-4a5b-8c6d-1e2f3a4b5c6d",
+        "source": {
+          "device_id": "dev_FIXTURE01",
+          "agent_version": "0.3.1"
+        },
+        "host": {
+          "hostname": "acme-ws-01",
+          "os_family": "windows",
+          "os_name": "Windows 11 Pro",
+          "os_version": "10.0.26100",
+          "ip": "10.1.4.23"
+        },
+        "process": {
+          "pid": 4312,
+          "name": "pwsh.exe",
+          "exe_path": "C:\\Program Files\\PowerShell\\7\\pwsh.exe",
+          "cmd_line": "pwsh.exe -EncodedCommand JABzAD0AJwBoAGkAJwA="
+        },
+        "parent": {
+          "pid": 1180,
+          "name": "explorer.exe"
+        },
+        "user": {
+          "name": "sam.jones",
+          "domain": "ACME",
+          "uid": "S-1-5-21-1-2-3-1104"
+        }
+      }
+    }
+  ],
+  "must_not_match": [
+    {
+      "name": "powershell with -ExecutionPolicy but no encoding",
+      "event": {
+        "event_id": "00000000-0000-4000-8000-000000000003",
+        "tenant_id": "8c9d0e1f-2a3b-4c5d-6e7f-8a9b0c1d2e3f",
+        "schema_version": "1.0.0",
+        "event_class": "process_activity",
+        "activity": "process_launched",
+        "event_time": "2026-07-08T09:14:03.221Z",
+        "ingest_time": "2026-07-08T09:14:05.100Z",
+        "source_type": "agent",
+        "source_event_id": "fixture-000003",
+        "batch_id": "0b7e3c1a-9d2f-4a5b-8c6d-1e2f3a4b5c6d",
+        "source": {
+          "device_id": "dev_FIXTURE01",
+          "agent_version": "0.3.1"
+        },
+        "host": {
+          "hostname": "acme-ws-01",
+          "os_family": "windows",
+          "os_name": "Windows 11 Pro",
+          "os_version": "10.0.26100",
+          "ip": "10.1.4.23"
+        },
+        "process": {
+          "pid": 4312,
+          "name": "powershell.exe",
+          "exe_path": "C:\\Windows\\System32\\powershell.exe",
+          "cmd_line": "powershell.exe -ExecutionPolicy Bypass -File C:\\scripts\\update.ps1"
+        },
+        "parent": {
+          "pid": 1180,
+          "name": "explorer.exe"
+        },
+        "user": {
+          "name": "sam.jones",
+          "domain": "ACME",
+          "uid": "S-1-5-21-1-2-3-1104"
+        }
+      }
+    },
+    {
+      "name": "encoded-looking flag on non-powershell binary",
+      "event": {
+        "event_id": "00000000-0000-4000-8000-000000000004",
+        "tenant_id": "8c9d0e1f-2a3b-4c5d-6e7f-8a9b0c1d2e3f",
+        "schema_version": "1.0.0",
+        "event_class": "process_activity",
+        "activity": "process_launched",
+        "event_time": "2026-07-08T09:14:03.221Z",
+        "ingest_time": "2026-07-08T09:14:05.100Z",
+        "source_type": "agent",
+        "source_event_id": "fixture-000004",
+        "batch_id": "0b7e3c1a-9d2f-4a5b-8c6d-1e2f3a4b5c6d",
+        "source": {
+          "device_id": "dev_FIXTURE01",
+          "agent_version": "0.3.1"
+        },
+        "host": {
+          "hostname": "acme-ws-01",
+          "os_family": "windows",
+          "os_name": "Windows 11 Pro",
+          "os_version": "10.0.26100",
+          "ip": "10.1.4.23"
+        },
+        "process": {
+          "pid": 4312,
+          "name": "cmd.exe",
+          "exe_path": "C:\\Windows\\System32\\cmd.exe",
+          "cmd_line": "cmd.exe /c echo -enc test"
+        },
+        "parent": {
+          "pid": 1180,
+          "name": "explorer.exe"
+        },
+        "user": {
+          "name": "sam.jones",
+          "domain": "ACME",
+          "uid": "S-1-5-21-1-2-3-1104"
+        }
+      }
+    }
+  ]
+}

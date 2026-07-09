@@ -1,0 +1,50 @@
+id: net-smb-to-external
+version: "1.0.0"
+title: Outbound SMB to External Address
+description: >
+  Detects outbound TCP connections on SMB/NetBIOS ports (445, 139) to
+  non-private addresses. SMB should never cross the internet boundary from an SME
+  network: outbound SMB to external hosts indicates NTLM credential leakage
+  (forced authentication via document/URL lures), data exfiltration, or worm
+  propagation. Known Azure Files endpoints (*.file.core.windows.net) are excluded
+  when the destination hostname is known, since that is the one common legitimate
+  external-SMB pattern.
+severity: high
+event_class: network_activity
+min_schema_version: "1.0.0"
+mitre_technique_ids:
+  - T1187
+  - T1021.002
+entity:
+  - host.hostname
+  - dst.ip
+detection:
+  condition:
+    all:
+      - field: direction
+        op: equals
+        value: "outbound"
+      - field: protocol
+        op: equals
+        value: "tcp"
+      - field: dst.port
+        op: in
+        value: [139, 445]
+      - not:
+          field: dst.ip
+          op: istartswith
+          value: ["10.", "192.168.", "172.16.", "172.17.", "172.18.", "172.19.", "172.20.", "172.21.", "172.22.", "172.23.", "172.24.", "172.25.", "172.26.", "172.27.", "172.28.", "172.29.", "172.30.", "172.31.", "127.", "169.254.", "fe80:", "fc", "fd", "::1"]
+      - not:
+          field: dst.hostname
+          op: iendswith
+          value: ".file.core.windows.net"
+false_positives:
+  - Azure Files traffic where the agent could not resolve dst.hostname will still
+    match (the exclusion only applies when the hostname is known) — check whether
+    the destination IP belongs to Microsoft ranges before escalating.
+  - Site-to-site connectivity using public IP space internally (rare,
+    misconfigured networks). Close as expected_behavior and flag the network
+    design to the tenant.
+references:
+  - https://attack.mitre.org/techniques/T1187/
+  - https://attack.mitre.org/techniques/T1021/002/

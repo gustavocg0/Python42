@@ -1,0 +1,136 @@
+# MITRE ATT&CK plain-language descriptions — managed content
+#
+# Owner: detection-engineering (authored with the rule pack).
+# Consumers: web console + dataplane API (alert detail "Attack technique(s)"
+#            section, AC-74) — served as static managed content keyed by
+#            technique ID; NEVER LLM-generated at runtime.
+# Spec: docs/design/ux-alert-style.md §3 —
+#   - display: plain sentence first; "{name} · {id} — Learn more" second;
+#   - sentence formula (§3.2): "Attackers {do what, in everyday words}
+#     {— optionally: using what familiar thing} so they can {goal the reader
+#     cares about}." One sentence, <= 30 words, present tense, subject
+#     "Attackers", obeys the §1.4 jargon denylist;
+#   - the five §3.3 worked examples are canonical and copied VERBATIM below;
+#   - fallback for an unmapped ID is the `fallback` string (never blank).
+#
+# Coverage: every technique ID referenced by pack.yaml v1.0.0 (enforced by
+# services/dataplane/tests/detector/test_mitre_descriptions.py), plus
+# T1547.001 (a §3.3 canonical exemplar, kept for future pack versions).
+
+fallback: "A known attack technique. Learn more on MITRE ATT&CK."
+
+techniques:
+  T1003:
+    name: "OS Credential Dumping"
+    sentence: "Attackers copy stored passwords out of a computer's memory or system files so they can sign in as other people without guessing anything."
+  T1003.001:
+    name: "OS Credential Dumping: LSASS Memory"
+    sentence: "Attackers read the memory of the Windows sign-in process so they can steal the passwords of everyone who has signed in to that computer."
+  T1003.006:
+    name: "OS Credential Dumping: DCSync"
+    sentence: "Attackers trick the server that manages your accounts into handing over its stored passwords so they can take over any account, including admins."
+  T1021:
+    name: "Remote Services"
+    sentence: "Attackers sign in to other computers using built-in remote-access features so they can move from one computer to another inside your network."
+  T1021.001:
+    name: "Remote Services: Remote Desktop Protocol"
+    sentence: "Attackers sign in over Remote Desktop — the same tool IT uses for remote support — so they can move from one computer to another inside your network."
+  T1021.002:
+    name: "Remote Services: SMB/Windows Admin Shares"
+    sentence: "Attackers connect to hidden Windows file-sharing folders — the same feature IT uses to manage computers remotely — so they can run programs on other computers."
+  T1027:
+    name: "Obfuscated Files or Information"
+    sentence: "Attackers disguise their commands and files so security tools and people can't see what they really do."
+  T1027.010:
+    name: "Obfuscated Files or Information: Command Obfuscation"
+    sentence: "Attackers scramble the commands they run so the commands look like nonsense and security tools can't spot what they do."
+  T1030:
+    name: "Data Transfer Size Limits"
+    sentence: "Attackers copy data out of your network in carefully sized uploads so the transfer doesn't stand out from normal traffic."
+  T1047:
+    name: "Windows Management Instrumentation"
+    sentence: "Attackers give computers instructions through WMI — a built-in Windows management feature IT tools use every day — so they can start programs without installing anything new."
+  T1048:
+    name: "Exfiltration Over Alternative Protocol"
+    sentence: "Attackers copy data out of your network over a connection type nobody watches closely, like direct mail traffic, so the theft goes unnoticed."
+  T1053:
+    name: "Scheduled Task/Job"
+    sentence: "Attackers create scheduled tasks — the same feature Windows uses for updates — so their malicious program runs by itself and keeps access even after a restart."
+  T1053.005:
+    name: "Scheduled Task/Job: Scheduled Task"
+    sentence: "Attackers create a Windows scheduled task so their malicious program starts by itself on a timer and keeps access even after a restart."
+  T1059:
+    name: "Command and Scripting Interpreter"
+    sentence: "Attackers type commands into tools already built into every computer so they can do their work without installing new software that antivirus might catch."
+  T1059.001:
+    name: "Command and Scripting Interpreter: PowerShell"
+    sentence: "Attackers run commands through PowerShell — a tool built into every Windows machine — so they can act without installing anything that antivirus might catch."
+  T1059.005:
+    name: "Command and Scripting Interpreter: Visual Basic"
+    sentence: "Attackers run Visual Basic scripts — a scripting feature built into Windows and Office — so they can install malicious programs when someone opens a booby-trapped document."
+  T1059.007:
+    name: "Command and Scripting Interpreter: JavaScript"
+    sentence: "Attackers run JavaScript files outside the browser, using a tool built into Windows, so they can install malicious programs from a simple double-click."
+  T1071:
+    name: "Application Layer Protocol"
+    sentence: "Attackers make an infected computer talk to a server they control using everyday internet traffic, so the connection blends in with normal browsing."
+  T1071.001:
+    name: "Application Layer Protocol: Web Protocols"
+    sentence: "Attackers make an infected computer quietly report back to a server they control, disguising that traffic as ordinary web browsing so it isn't noticed."
+  T1071.003:
+    name: "Application Layer Protocol: Mail Protocols"
+    sentence: "Attackers send data from an infected computer disguised as ordinary email traffic so it slips past controls that only watch web browsing."
+  T1078:
+    name: "Valid Accounts"
+    sentence: "Attackers sign in with a real username and password they have stolen or guessed, so their activity looks like a normal user's."
+  T1078.003:
+    name: "Valid Accounts: Local Accounts"
+    sentence: "Attackers sign in with a computer's own built-in accounts, like the local administrator, so they can act with full control while looking like routine maintenance."
+  T1105:
+    name: "Ingress Tool Transfer"
+    sentence: "Attackers download extra malicious programs onto a computer they already control so they can dig deeper into your network."
+  T1110:
+    name: "Brute Force"
+    sentence: "Attackers guess passwords over and over, usually with automated tools, so they can break into an account without needing to steal the password first."
+  T1110.001:
+    name: "Brute Force: Password Guessing"
+    sentence: "Attackers try common passwords against an account over and over so they can break in without stealing anything first."
+  T1133:
+    name: "External Remote Services"
+    sentence: "Attackers sign in from the internet through remote-access services like Remote Desktop or VPN so they can enter your network without sending a single email."
+  T1140:
+    name: "Deobfuscate/Decode Files or Information"
+    sentence: "Attackers unscramble a disguised file after it arrives — often using tools built into Windows — so the real malicious program appears only on the computer itself."
+  T1187:
+    name: "Forced Authentication"
+    sentence: "Attackers trick a computer into signing in to a server they control so they can capture the account's secret sign-in data."
+  T1204:
+    name: "User Execution"
+    sentence: "Attackers trick a person into opening a file or link themselves so the malicious program starts with that person's own permissions."
+  T1204.002:
+    name: "User Execution: Malicious File"
+    sentence: "Attackers send a booby-trapped document or program and rely on someone opening it, so their malicious program runs without breaking in at all."
+  T1218:
+    name: "System Binary Proxy Execution"
+    sentence: "Attackers launch their code through trusted programs that ship with Windows so security tools see a familiar name and let it run."
+  T1218.005:
+    name: "System Binary Proxy Execution: Mshta"
+    sentence: "Attackers run malicious scripts through 'mshta.exe' — a trusted program built into Windows — so the activity carries a name antivirus normally trusts."
+  T1218.011:
+    name: "System Binary Proxy Execution: Rundll32"
+    sentence: "Attackers run malicious code through 'rundll32.exe' — a trusted Windows program that loads software components — so it looks like normal system activity."
+  T1490:
+    name: "Inhibit System Recovery"
+    sentence: "Attackers delete Windows backup copies and recovery points so you cannot restore your files after they lock or destroy them."
+  T1547.001:
+    name: "Boot or Logon Autostart Execution: Registry Run Keys / Startup Folder"
+    sentence: "Attackers add their program to the list of things Windows starts automatically, so their access survives every restart."
+  T1566:
+    name: "Phishing"
+    sentence: "Attackers send a fake email or message designed to trick someone into opening a file or link, so they can get their first foothold inside your network."
+  T1566.001:
+    name: "Phishing: Spearphishing Attachment"
+    sentence: "Attackers email a booby-trapped attachment written to trick one specific person into opening it, so they can get inside without touching your defenses."
+  T1571:
+    name: "Non-Standard Port"
+    sentence: "Attackers connect to services on unusual network ports so the traffic avoids the checks that watch the standard ones."

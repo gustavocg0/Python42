@@ -1,0 +1,117 @@
+{
+  "rule_id": "net-smb-to-external",
+  "rule_version": "1.0.0",
+  "must_match": [
+    {
+      "name": "SMB 445 to external IP",
+      "event": {
+        "event_id": "00000000-0000-4000-8000-000000000051",
+        "tenant_id": "8c9d0e1f-2a3b-4c5d-6e7f-8a9b0c1d2e3f",
+        "schema_version": "1.0.0",
+        "event_class": "network_activity",
+        "activity": "connection_opened",
+        "event_time": "2026-07-08T09:14:03.221Z",
+        "ingest_time": "2026-07-08T09:14:05.100Z",
+        "source_type": "agent",
+        "source_event_id": "fixture-000051",
+        "batch_id": "0b7e3c1a-9d2f-4a5b-8c6d-1e2f3a4b5c6d",
+        "source": {
+          "device_id": "dev_FIXTURE01",
+          "agent_version": "0.3.1"
+        },
+        "host": {
+          "hostname": "acme-ws-01",
+          "os_family": "windows",
+          "os_name": "Windows 11 Pro",
+          "os_version": "10.0.26100",
+          "ip": "10.1.4.23"
+        },
+        "direction": "outbound",
+        "protocol": "tcp",
+        "src": {
+          "ip": "10.1.4.23",
+          "port": 51544
+        },
+        "dst": {
+          "ip": "198.51.100.44",
+          "port": 445
+        }
+      }
+    }
+  ],
+  "must_not_match": [
+    {
+      "name": "SMB 445 to internal file server",
+      "event": {
+        "event_id": "00000000-0000-4000-8000-000000000052",
+        "tenant_id": "8c9d0e1f-2a3b-4c5d-6e7f-8a9b0c1d2e3f",
+        "schema_version": "1.0.0",
+        "event_class": "network_activity",
+        "activity": "connection_opened",
+        "event_time": "2026-07-08T09:14:03.221Z",
+        "ingest_time": "2026-07-08T09:14:05.100Z",
+        "source_type": "agent",
+        "source_event_id": "fixture-000052",
+        "batch_id": "0b7e3c1a-9d2f-4a5b-8c6d-1e2f3a4b5c6d",
+        "source": {
+          "device_id": "dev_FIXTURE01",
+          "agent_version": "0.3.1"
+        },
+        "host": {
+          "hostname": "acme-ws-01",
+          "os_family": "windows",
+          "os_name": "Windows 11 Pro",
+          "os_version": "10.0.26100",
+          "ip": "10.1.4.23"
+        },
+        "direction": "outbound",
+        "protocol": "tcp",
+        "src": {
+          "ip": "10.1.4.23",
+          "port": 51544
+        },
+        "dst": {
+          "ip": "192.168.10.4",
+          "port": 445
+        }
+      }
+    },
+    {
+      "name": "SMB 445 to Azure Files (known hostname)",
+      "event": {
+        "event_id": "00000000-0000-4000-8000-000000000053",
+        "tenant_id": "8c9d0e1f-2a3b-4c5d-6e7f-8a9b0c1d2e3f",
+        "schema_version": "1.0.0",
+        "event_class": "network_activity",
+        "activity": "connection_opened",
+        "event_time": "2026-07-08T09:14:03.221Z",
+        "ingest_time": "2026-07-08T09:14:05.100Z",
+        "source_type": "agent",
+        "source_event_id": "fixture-000053",
+        "batch_id": "0b7e3c1a-9d2f-4a5b-8c6d-1e2f3a4b5c6d",
+        "source": {
+          "device_id": "dev_FIXTURE01",
+          "agent_version": "0.3.1"
+        },
+        "host": {
+          "hostname": "acme-ws-01",
+          "os_family": "windows",
+          "os_name": "Windows 11 Pro",
+          "os_version": "10.0.26100",
+          "ip": "10.1.4.23"
+        },
+        "direction": "outbound",
+        "protocol": "tcp",
+        "src": {
+          "ip": "10.1.4.23",
+          "port": 51544
+        },
+        "dst": {
+          "ip": "20.60.145.10",
+          "port": 445,
+          "hostname": "tenantfiles.file.core.windows.net"
+        }
+      }
+    }
+  ]
+}

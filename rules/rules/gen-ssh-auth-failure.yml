@@ -1,0 +1,30 @@
+id: gen-ssh-auth-failure
+version: "1.0.0"
+title: SSH/PAM Authentication Failure in Forwarded Syslog
+description: >
+  Detects classic OpenSSH/PAM authentication-failure phrases ("Failed password
+  for", "Invalid user", "authentication failure") in generic-ingest log messages
+  from Linux servers, NAS devices, and appliances that tenants forward via the
+  generic JSON ingest. A single failure is low value (hence low severity); the
+  per-host entity key dedups sustained brute force into one alert whose occurrence
+  count reflects intensity (AC-41/42) - that occurrence growth, not the individual
+  event, is the actionable signal in the stateless MVP engine.
+severity: low
+event_class: generic
+min_schema_version: "1.0.0"
+mitre_technique_ids:
+  - T1110.001
+entity:
+  - host.hostname
+detection:
+  condition:
+    field: message
+    op: icontains
+    value: ["failed password for", "invalid user", "authentication failure"]
+false_positives:
+  - Users mistyping passwords produces a steady trickle - expected and why severity
+    is low. Internet-facing SSH will accumulate large occurrence counts from
+    background scanning; the fix is restricting exposure (keys-only, VPN,
+    fail2ban), not closing as false_positive.
+references:
+  - https://attack.mitre.org/techniques/T1110/001/

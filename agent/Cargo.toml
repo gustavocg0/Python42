@@ -1,0 +1,40 @@
+[workspace]
+resolver = "2"
+members = [
+    "collector-core",
+    "providers/etw",
+    "providers/simulated",
+    "agentd",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "UNLICENSED"
+publish = false
+
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+uuid = { version = "1", features = ["v4", "serde"] }
+time = { version = "0.3", features = ["formatting", "parsing"] }
+rand = { version = "0.8", features = ["small_rng"] }
+thiserror = "2"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["fmt"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "time", "sync", "signal"] }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
+rcgen = "0.13"
+sysinfo = { version = "0.33", default-features = false, features = ["system"] }
+
+# dev
+tempfile = "3"
+wiremock = "0.6"
+
+[profile.release]
+# Small, stripped binary for endpoint distribution (AC-65 footprint).
+opt-level = "s"
+lto = "thin"
+strip = "symbols"
+panic = "abort"

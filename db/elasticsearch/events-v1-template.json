@@ -1,0 +1,119 @@
+{
+  "index_patterns": ["events-v1-*"],
+  "priority": 100,
+  "version": 1,
+  "_meta": {
+    "description": "Normalized security events, schema_version 1.x (docs/contracts/event-schema.md). Explicit mappings only: dynamic=strict per data-layer rule -- unknown source fields belong in `unmapped`, never in new dynamic fields. Per-tenant indices events-v1-{tenant_id}-{yyyy.MM}, read alias events-{tenant_id}. A schema MAJOR bump requires a new events-v2-* template + dual-read window.",
+    "owner": "database-architect",
+    "schema_contract": "docs/contracts/event-schema.md v1.0.0"
+  },
+  "template": {
+    "settings": {
+      "index": {
+        "refresh_interval": "5s",
+        "number_of_shards": 1,
+        "number_of_replicas": 0,
+        "mapping": {
+          "total_fields": { "limit": 200 }
+        }
+      }
+    },
+    "mappings": {
+      "dynamic": "strict",
+      "properties": {
+        "event_id":        { "type": "keyword" },
+        "tenant_id":       { "type": "keyword" },
+        "schema_version":  { "type": "keyword" },
+        "event_class":     { "type": "keyword" },
+        "activity":        { "type": "keyword" },
+        "event_time":      { "type": "date", "format": "strict_date_optional_time" },
+        "time_inferred":   { "type": "boolean" },
+        "ingest_time":     { "type": "date", "format": "strict_date_optional_time" },
+        "source_type":     { "type": "keyword" },
+        "source_event_id": { "type": "keyword", "ignore_above": 128 },
+        "batch_id":        { "type": "keyword" },
+        "severity_hint":   { "type": "keyword" },
+
+        "source": {
+          "properties": {
+            "device_id":     { "type": "keyword" },
+            "agent_version": { "type": "keyword" },
+            "ingest_key_id": { "type": "keyword" },
+            "vendor":        { "type": "keyword" },
+            "product":       { "type": "keyword" }
+          }
+        },
+
+        "host": {
+          "properties": {
+            "hostname":   { "type": "keyword", "ignore_above": 253 },
+            "os_family":  { "type": "keyword" },
+            "os_name":    { "type": "keyword" },
+            "os_version": { "type": "keyword" },
+            "ip":         { "type": "ip", "ignore_malformed": true },
+            "mac":        { "type": "keyword" }
+          }
+        },
+
+        "user": {
+          "properties": {
+            "name":   { "type": "keyword" },
+            "domain": { "type": "keyword" },
+            "uid":    { "type": "keyword" }
+          }
+        },
+
+        "process": {
+          "properties": {
+            "pid":          { "type": "long" },
+            "name":         { "type": "keyword" },
+            "exe_path":     { "type": "keyword", "ignore_above": 1024 },
+            "cmd_line":     { "type": "wildcard" },
+            "sha256":       { "type": "keyword" },
+            "created_time": { "type": "date", "format": "strict_date_optional_time" }
+          }
+        },
+        "parent": {
+          "properties": {
+            "pid":      { "type": "long" },
+            "name":     { "type": "keyword" },
+            "exe_path": { "type": "keyword", "ignore_above": 1024 }
+          }
+        },
+        "exit_code": { "type": "long" },
+
+        "direction": { "type": "keyword" },
+        "protocol":  { "type": "keyword" },
+        "src": {
+          "properties": {
+            "ip":   { "type": "ip", "ignore_malformed": true },
+            "port": { "type": "integer" }
+          }
+        },
+        "dst": {
+          "properties": {
+            "ip":       { "type": "ip", "ignore_malformed": true },
+            "port":     { "type": "integer" },
+            "hostname": { "type": "keyword", "ignore_above": 253 }
+          }
+        },
+        "bytes_sent":     { "type": "long" },
+        "bytes_received": { "type": "long" },
+
+        "status":         { "type": "keyword" },
+        "logon_type":     { "type": "keyword" },
+        "src_ip":         { "type": "ip", "ignore_malformed": true },
+        "session_id":     { "type": "keyword" },
+        "failure_reason": { "type": "keyword" },
+
+        "message":       { "type": "match_only_text" },
+        "category":      { "type": "keyword" },
+        "fields":        { "type": "flattened", "ignore_above": 1024 },
+        "raw":           { "type": "object", "enabled": false },
+        "raw_truncated": { "type": "boolean" },
+
+        "unmapped": { "type": "object", "enabled": false }
+      }
+    }
+  }
+}

@@ -1,0 +1,49 @@
+id: proc-lsass-memory-dump
+version: "1.0.0"
+title: LSASS Memory Dump Attempt
+description: >
+  Detects attempts to dump LSASS process memory for offline credential extraction,
+  via ProcDump targeting lsass, the comsvcs.dll MiniDump export (typically through
+  rundll32), or createdump.exe pointed at lsass. A successful LSASS dump yields
+  every credential on the host; this is a hands-on-keyboard attacker action with no
+  routine business equivalent, hence critical severity.
+severity: critical
+event_class: process_activity
+min_schema_version: "1.0.0"
+mitre_technique_ids:
+  - T1003.001
+entity:
+  - host.hostname
+  - user.name
+detection:
+  condition:
+    any:
+      - all:
+          - field: process.name
+            op: iin
+            value: ["procdump.exe", "procdump64.exe"]
+          - field: process.cmd_line
+            op: icontains
+            value: "lsass"
+      - all:
+          - field: process.cmd_line
+            op: icontains
+            value: "comsvcs"
+          - field: process.cmd_line
+            op: icontains
+            value: "minidump"
+      - all:
+          - field: process.name
+            op: iequals
+            value: "createdump.exe"
+          - field: process.cmd_line
+            op: icontains
+            value: "lsass"
+false_positives:
+  - Extremely rare - a support engineer capturing an LSASS dump under Microsoft
+    guidance for an authentication bug. Verify with the operator before closing;
+    close as expected_behavior only with a named support case.
+references:
+  - https://attack.mitre.org/techniques/T1003/001/
+  - https://lolbas-project.github.io/lolbas/Libraries/comsvcs/
+  - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_access/proc_access_win_lsass_memdump.yml

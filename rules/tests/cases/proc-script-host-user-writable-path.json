@@ -1,0 +1,90 @@
+{
+  "rule_id": "proc-script-host-user-writable-path",
+  "rule_version": "1.0.0",
+  "must_match": [
+    {
+      "name": "wscript running vbs from Temp",
+      "event": {
+        "event_id": "00000000-0000-4000-8000-000000000036",
+        "tenant_id": "8c9d0e1f-2a3b-4c5d-6e7f-8a9b0c1d2e3f",
+        "schema_version": "1.0.0",
+        "event_class": "process_activity",
+        "activity": "process_launched",
+        "event_time": "2026-07-08T09:14:03.221Z",
+        "ingest_time": "2026-07-08T09:14:05.100Z",
+        "source_type": "agent",
+        "source_event_id": "fixture-000036",
+        "batch_id": "0b7e3c1a-9d2f-4a5b-8c6d-1e2f3a4b5c6d",
+        "source": {
+          "device_id": "dev_FIXTURE01",
+          "agent_version": "0.3.1"
+        },
+        "host": {
+          "hostname": "acme-ws-01",
+          "os_family": "windows",
+          "os_name": "Windows 11 Pro",
+          "os_version": "10.0.26100",
+          "ip": "10.1.4.23"
+        },
+        "process": {
+          "pid": 4312,
+          "name": "wscript.exe",
+          "exe_path": "C:\\Windows\\System32\\wscript.exe",
+          "cmd_line": "wscript.exe C:\\Users\\sam\\AppData\\Local\\Temp\\invoice_scan.vbs"
+        },
+        "parent": {
+          "pid": 1180,
+          "name": "explorer.exe"
+        },
+        "user": {
+          "name": "sam.jones",
+          "domain": "ACME",
+          "uid": "S-1-5-21-1-2-3-1104"
+        }
+      }
+    }
+  ],
+  "must_not_match": [
+    {
+      "name": "cscript running system script (benign)",
+      "event": {
+        "event_id": "00000000-0000-4000-8000-000000000037",
+        "tenant_id": "8c9d0e1f-2a3b-4c5d-6e7f-8a9b0c1d2e3f",
+        "schema_version": "1.0.0",
+        "event_class": "process_activity",
+        "activity": "process_launched",
+        "event_time": "2026-07-08T09:14:03.221Z",
+        "ingest_time": "2026-07-08T09:14:05.100Z",
+        "source_type": "agent",
+        "source_event_id": "fixture-000037",
+        "batch_id": "0b7e3c1a-9d2f-4a5b-8c6d-1e2f3a4b5c6d",
+        "source": {
+          "device_id": "dev_FIXTURE01",
+          "agent_version": "0.3.1"
+        },
+        "host": {
+          "hostname": "acme-ws-01",
+          "os_family": "windows",
+          "os_name": "Windows 11 Pro",
+          "os_version": "10.0.26100",
+          "ip": "10.1.4.23"
+        },
+        "process": {
+          "pid": 4312,
+          "name": "cscript.exe",
+          "exe_path": "C:\\Windows\\System32\\cscript.exe",
+          "cmd_line": "cscript.exe C:\\Windows\\System32\\slmgr.vbs /dlv"
+        },
+        "parent": {
+          "pid": 1180,
+          "name": "explorer.exe"
+        },
+        "user": {
+          "name": "sam.jones",
+          "domain": "ACME",
+          "uid": "S-1-5-21-1-2-3-1104"
+        }
+      }
+    }
+  ]
+}

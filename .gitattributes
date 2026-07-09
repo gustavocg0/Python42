@@ -1,0 +1,6 @@
+# Shell scripts run inside Linux containers / Git Bash — always LF, even on
+# Windows checkouts with core.autocrlf=true (CRLF breaks #!/usr/bin/env bash).
+*.sh text eol=lf
+# nginx/compose/config files consumed verbatim by Linux containers.
+*.conf text eol=lf
+*.template text eol=lf

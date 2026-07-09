@@ -1,0 +1,131 @@
+{
+  "rule_id": "proc-lsass-memory-dump",
+  "rule_version": "1.0.0",
+  "must_match": [
+    {
+      "name": "procdump targeting lsass",
+      "event": {
+        "event_id": "00000000-0000-4000-8000-000000000033",
+        "tenant_id": "8c9d0e1f-2a3b-4c5d-6e7f-8a9b0c1d2e3f",
+        "schema_version": "1.0.0",
+        "event_class": "process_activity",
+        "activity": "process_launched",
+        "event_time": "2026-07-08T09:14:03.221Z",
+        "ingest_time": "2026-07-08T09:14:05.100Z",
+        "source_type": "agent",
+        "source_event_id": "fixture-000033",
+        "batch_id": "0b7e3c1a-9d2f-4a5b-8c6d-1e2f3a4b5c6d",
+        "source": {
+          "device_id": "dev_FIXTURE01",
+          "agent_version": "0.3.1"
+        },
+        "host": {
+          "hostname": "acme-ws-01",
+          "os_family": "windows",
+          "os_name": "Windows 11 Pro",
+          "os_version": "10.0.26100",
+          "ip": "10.1.4.23"
+        },
+        "process": {
+          "pid": 4312,
+          "name": "procdump64.exe",
+          "exe_path": "C:\\tools\\procdump64.exe",
+          "cmd_line": "procdump64.exe -accepteula -ma lsass.exe C:\\temp\\ls.dmp"
+        },
+        "parent": {
+          "pid": 1180,
+          "name": "explorer.exe"
+        },
+        "user": {
+          "name": "sam.jones",
+          "domain": "ACME",
+          "uid": "S-1-5-21-1-2-3-1104"
+        }
+      }
+    },
+    {
+      "name": "comsvcs MiniDump via rundll32",
+      "event": {
+        "event_id": "00000000-0000-4000-8000-000000000034",
+        "tenant_id": "8c9d0e1f-2a3b-4c5d-6e7f-8a9b0c1d2e3f",
+        "schema_version": "1.0.0",
+        "event_class": "process_activity",
+        "activity": "process_launched",
+        "event_time": "2026-07-08T09:14:03.221Z",
+        "ingest_time": "2026-07-08T09:14:05.100Z",
+        "source_type": "agent",
+        "source_event_id": "fixture-000034",
+        "batch_id": "0b7e3c1a-9d2f-4a5b-8c6d-1e2f3a4b5c6d",
+        "source": {
+          "device_id": "dev_FIXTURE01",
+          "agent_version": "0.3.1"
+        },
+        "host": {
+          "hostname": "acme-ws-01",
+          "os_family": "windows",
+          "os_name": "Windows 11 Pro",
+          "os_version": "10.0.26100",
+          "ip": "10.1.4.23"
+        },
+        "process": {
+          "pid": 4312,
+          "name": "rundll32.exe",
+          "exe_path": "C:\\Windows\\System32\\rundll32.exe",
+          "cmd_line": "rundll32.exe C:\\windows\\system32\\comsvcs.dll, MiniDump 624 C:\\temp\\l.dmp full"
+        },
+        "parent": {
+          "pid": 1180,
+          "name": "explorer.exe"
+        },
+        "user": {
+          "name": "sam.jones",
+          "domain": "ACME",
+          "uid": "S-1-5-21-1-2-3-1104"
+        }
+      }
+    }
+  ],
+  "must_not_match": [
+    {
+      "name": "procdump against an application process",
+      "event": {
+        "event_id": "00000000-0000-4000-8000-000000000035",
+        "tenant_id": "8c9d0e1f-2a3b-4c5d-6e7f-8a9b0c1d2e3f",
+        "schema_version": "1.0.0",
+        "event_class": "process_activity",
+        "activity": "process_launched",
+        "event_time": "2026-07-08T09:14:03.221Z",
+        "ingest_time": "2026-07-08T09:14:05.100Z",
+        "source_type": "agent",
+        "source_event_id": "fixture-000035",
+        "batch_id": "0b7e3c1a-9d2f-4a5b-8c6d-1e2f3a4b5c6d",
+        "source": {
+          "device_id": "dev_FIXTURE01",
+          "agent_version": "0.3.1"
+        },
+        "host": {
+          "hostname": "acme-ws-01",
+          "os_family": "windows",
+          "os_name": "Windows 11 Pro",
+          "os_version": "10.0.26100",
+          "ip": "10.1.4.23"
+        },
+        "process": {
+          "pid": 4312,
+          "name": "procdump64.exe",
+          "exe_path": "C:\\tools\\procdump64.exe",
+          "cmd_line": "procdump64.exe -accepteula -ma myapp.exe C:\\temp\\app.dmp"
+        },
+        "parent": {
+          "pid": 1180,
+          "name": "explorer.exe"
+        },
+        "user": {
+          "name": "sam.jones",
+          "domain": "ACME",
+          "uid": "S-1-5-21-1-2-3-1104"
+        }
+      }
+    }
+  ]
+}

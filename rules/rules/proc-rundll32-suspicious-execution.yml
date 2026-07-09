@@ -1,0 +1,38 @@
+id: proc-rundll32-suspicious-execution
+version: "1.0.0"
+title: Rundll32 Executing From User-Writable Path or Inline Script
+description: >
+  Detects rundll32.exe loading a DLL from a user-writable location (AppData, Temp,
+  Users\Public, ProgramData) or executing inline javascript:/vbscript: content.
+  Rundll32 is a signed proxy-execution binary; malware drops a DLL into a
+  user-writable directory and runs it via rundll32 to blend in. System DLL loads
+  from protected paths do not match.
+severity: medium
+event_class: process_activity
+min_schema_version: "1.0.0"
+mitre_technique_ids:
+  - T1218.011
+entity:
+  - host.hostname
+  - user.name
+detection:
+  condition:
+    all:
+      - field: process.name
+        op: iequals
+        value: "rundll32.exe"
+      - any:
+          - field: process.cmd_line
+            op: icontains
+            value: ['\appdata\', '\temp\', '\users\public\', '\programdata\']
+          - field: process.cmd_line
+            op: icontains
+            value: ["javascript:", "vbscript:"]
+false_positives:
+  - Installers and per-user software (including some browser/updater components under
+    AppData or ProgramData) legitimately invoke rundll32 on DLLs in those paths — this
+    is why severity is medium rather than high. Close recurring installer paths as
+    expected_behavior; sustained sources feed FP tuning (AC-46).
+references:
+  - https://attack.mitre.org/techniques/T1218/011/
+  - https://lolbas-project.github.io/lolbas/Binaries/Rundll32/

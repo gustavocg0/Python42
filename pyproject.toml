@@ -1,0 +1,21 @@
+# Root of the uv workspace for the SOC platform monorepo.
+# This is a VIRTUAL workspace root — it is not itself a package.
+
+[tool.uv.workspace]
+members = ["packages/*", "services/controlplane", "services/dataplane", "db"]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.11",
+    "pytest>=8.3",
+    "pytest-asyncio>=0.26",
+    "import-linter>=2.3",
+    # Test-only fakes/utilities shared across package test suites:
+    "fakeredis>=2.28",   # soc_pipeline tests (no live Redis in unit tests)
+    "httpx>=0.28",       # soc_entitlements MockTransport + ASGI middleware tests
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["packages"]
+addopts = "-q"

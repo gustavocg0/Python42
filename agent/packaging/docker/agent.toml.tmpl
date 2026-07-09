@@ -1,0 +1,34 @@
+# agentd configuration template for the Docker image (simulated provider).
+#
+# Rendered by packaging/docker/entrypoint.sh at container start:
+# @PLACEHOLDER@ tokens are substituted from the container environment
+# (SOC_GATEWAY_URL, SOC_CA_CERT_PATH, SOC_SIM_* — see entrypoint.sh).
+# The enrollment token is NEVER written into this file; it is passed to
+# agentd via the SOC_AGENT_ENROLLMENT_TOKEN env override (SEC-13).
+
+# Base URL of the agent gateway (nginx mTLS edge). Release builds require
+# https:// (AC-69).
+server_url = "@SERVER_URL@"
+
+# Device identity + credentials + disk buffer live under the /var/lib/socagent
+# volume so re-created containers keep their enrollment (no duplicate assets).
+state_dir = "@STATE_DIR@"
+
+# Trust anchor for the gateway's server certificate (compose dev CA,
+# mounted read-only at SOC_CA_CERT_PATH). Same code path as a production
+# private PKI (ADR-0006 §5); no verification is ever skipped.
+server_ca_pem_path = "@CA_PATH@"
+
+# Containers run the cross-platform simulated provider (AC-62/64).
+provider = "simulated"
+
+# Pre-enrollment fallback; the server value from enrollment overrides this.
+heartbeat_interval_seconds = 60
+
+[simulated]
+events_per_second = @SIM_EPS@
+# 0 = random (demo); non-zero = deterministic stream for reproducible e2e.
+seed = @SIM_SEED@
+# Emit detection-tripping scenarios (brute force, Office->encoded PowerShell
+# + C2 beacon, lsass dump) so the console shows detections in the POC demo.
+suspicious_patterns = @SIM_SUSPICIOUS@

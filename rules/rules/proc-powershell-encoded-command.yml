@@ -1,0 +1,36 @@
+id: proc-powershell-encoded-command
+version: "1.0.0"
+title: PowerShell Encoded Command Execution
+description: >
+  Detects PowerShell launched with an encoded command (-e/-ec/-enc/-EncodedCommand).
+  Base64-encoded command lines are the most common way commodity malware and loaders
+  hide PowerShell payloads from casual inspection. Legitimate interactive use of
+  encoded commands is rare on SME endpoints, which keeps this high-signal.
+severity: high
+event_class: process_activity
+min_schema_version: "1.0.0"
+mitre_technique_ids:
+  - T1059.001
+  - T1027.010
+entity:
+  - host.hostname
+  - user.name
+detection:
+  condition:
+    all:
+      - field: process.name
+        op: iin
+        value: ["powershell.exe", "pwsh.exe"]
+      - field: process.cmd_line
+        op: icontains
+        value: [" -e ", " -ec ", " -enc"]
+false_positives:
+  - Some management tooling (ConfigMgr/SCCM, Exchange setup, a few RMM agents) runs
+    scheduled maintenance via -EncodedCommand. Close as expected_behavior with the
+    tool named in the reason; recurring tenant-specific sources feed FP tuning (AC-46).
+  - A command line containing a literal " -e " argument for a script parameter can
+    match; the token list deliberately excludes bare "-en" to avoid -Enable* switches.
+references:
+  - https://attack.mitre.org/techniques/T1059/001/
+  - https://attack.mitre.org/techniques/T1027/010/
+  - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_powershell_encode.yml

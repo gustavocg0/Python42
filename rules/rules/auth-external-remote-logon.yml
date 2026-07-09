@@ -1,0 +1,45 @@
+id: auth-external-remote-logon
+version: "1.0.0"
+title: Successful Remote Interactive Logon From External Address
+description: >
+  Detects a successful remote-interactive (RDP-class) logon whose source address is
+  public IP space. SME hosts should be reached over VPN (private source IP) or not
+  at all; a successful remote-interactive session directly from the internet is
+  either an exposed-RDP compromise in progress or unsanctioned remote access.
+  The exists guard on src_ip ensures logons without a recorded source never match
+  (FORMAT.md 5.3).
+severity: high
+event_class: authentication
+min_schema_version: "1.0.0"
+mitre_technique_ids:
+  - T1133
+  - T1078
+entity:
+  - host.hostname
+  - user.name
+detection:
+  condition:
+    all:
+      - field: activity
+        op: equals
+        value: "logon"
+      - field: status
+        op: equals
+        value: "success"
+      - field: logon_type
+        op: equals
+        value: "remote_interactive"
+      - field: src_ip
+        op: exists
+      - not:
+          field: src_ip
+          op: istartswith
+          value: ["10.", "192.168.", "172.16.", "172.17.", "172.18.", "172.19.", "172.20.", "172.21.", "172.22.", "172.23.", "172.24.", "172.25.", "172.26.", "172.27.", "172.28.", "172.29.", "172.30.", "172.31.", "127.", "169.254.", "fe80:", "fc", "fd", "::1"]
+false_positives:
+  - Tenants that intentionally expose RDP for a named administrator (still risky;
+    recommend VPN/RD Gateway). Repeated legitimate access shows as the same
+    host+user entity from stable source IPs - close as expected_behavior with the
+    admin named, or disable per tenant (AC-38) after a documented risk acceptance.
+references:
+  - https://attack.mitre.org/techniques/T1133/
+  - https://attack.mitre.org/techniques/T1078/

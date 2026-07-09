@@ -1,0 +1,70 @@
+{
+  "rule_id": "gen-hacktool-indicator-in-logs",
+  "rule_version": "1.0.0",
+  "must_match": [
+    {
+      "name": "AV log naming Mimikatz",
+      "event": {
+        "event_id": "00000000-0000-4000-8000-000000000078",
+        "tenant_id": "8c9d0e1f-2a3b-4c5d-6e7f-8a9b0c1d2e3f",
+        "schema_version": "1.0.0",
+        "event_class": "generic",
+        "activity": "log",
+        "event_time": "2026-07-08T09:14:03.221Z",
+        "ingest_time": "2026-07-08T09:14:05.100Z",
+        "source_type": "generic",
+        "source_event_id": "fixture-000078",
+        "batch_id": "0b7e3c1a-9d2f-4a5b-8c6d-1e2f3a4b5c6d",
+        "source": {
+          "ingest_key_id": "ik_FIXTURE01",
+          "vendor": "acme",
+          "product": "generic-src"
+        },
+        "host": {
+          "hostname": "fin-srv-01",
+          "os_family": "windows",
+          "os_name": "Windows Server 2022",
+          "os_version": "10.0.20348"
+        },
+        "message": "Threat detected: Mimikatz credential dumper blocked on host FIN-SRV-01",
+        "category": "av.alert",
+        "raw": {
+          "msg": "Threat detected: Mimikatz credential dumper blocked on host FIN-SRV-01"
+        }
+      }
+    }
+  ],
+  "must_not_match": [
+    {
+      "name": "routine backup log line",
+      "event": {
+        "event_id": "00000000-0000-4000-8000-000000000079",
+        "tenant_id": "8c9d0e1f-2a3b-4c5d-6e7f-8a9b0c1d2e3f",
+        "schema_version": "1.0.0",
+        "event_class": "generic",
+        "activity": "log",
+        "event_time": "2026-07-08T09:14:03.221Z",
+        "ingest_time": "2026-07-08T09:14:05.100Z",
+        "source_type": "generic",
+        "source_event_id": "fixture-000079",
+        "batch_id": "0b7e3c1a-9d2f-4a5b-8c6d-1e2f3a4b5c6d",
+        "source": {
+          "ingest_key_id": "ik_FIXTURE01",
+          "vendor": "acme",
+          "product": "generic-src"
+        },
+        "host": {
+          "hostname": "nas-01",
+          "os_family": "linux",
+          "os_name": "Synology DSM",
+          "os_version": "7.2"
+        },
+        "message": "Nightly backup completed successfully in 42 minutes",
+        "category": "backup",
+        "raw": {
+          "msg": "Nightly backup completed successfully in 42 minutes"
+        }
+      }
+    }
+  ]
+}

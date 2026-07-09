@@ -202,3 +202,10 @@ Agents submit **pre-classified** events (they know `event_class`, `activity`, cl
 ## 6. Dead-letter record (AC-32)
 
 PG `dead_letter_events`: `{id, tenant_id, batch_id, source_type, received_at, raw payload (≤64KB), error_code, error_detail}`; retained 7 days; per-tenant `events_rejected` counter metric incremented on write.
+
+## 7. Clarifications (Architect-ratified, 2026-07-08)
+
+Raised during implementation of `soc_schemas`; binding for all consumers:
+
+1. **UUID strictness:** `event_id` is validated as a strict RFC4122 UUIDv4. `tenant_id` and `batch_id` are validated as generic UUIDs (any version/variant), matching how they are minted by provisioning and ingest.
+2. **`host` on generic events:** `host` is **optional** when `source_type = generic`. When present, it must carry `hostname`, `os_family`, `os_name`, `os_version` (same shape as agent events). Agent events still require `host` unconditionally.

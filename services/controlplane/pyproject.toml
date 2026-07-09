@@ -1,0 +1,33 @@
+[project]
+name = "controlplane"
+version = "0.1.0"
+description = "Control-plane API: signup, verification, provisioning saga, auth/sessions, users, entitlements, trial lifecycle"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn>=0.34",
+    "pydantic>=2.10",
+    "asyncpg>=0.30",
+    "redis>=5.2",
+    "httpx>=0.28",
+    "argon2-cffi>=23.1",
+    "soc-schemas",
+    "soc-tenancy",
+    "soc-entitlements",
+    "soc-audit",
+    "soc-telemetry",
+]
+
+[tool.uv.sources]
+soc-schemas = { workspace = true }
+soc-tenancy = { workspace = true }
+soc-entitlements = { workspace = true }
+soc-audit = { workspace = true }
+soc-telemetry = { workspace = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/controlplane"]

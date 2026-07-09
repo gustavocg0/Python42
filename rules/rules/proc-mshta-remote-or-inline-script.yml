@@ -1,0 +1,33 @@
+id: proc-mshta-remote-or-inline-script
+version: "1.0.0"
+title: Mshta Executing Remote or Inline Script
+description: >
+  Detects mshta.exe launched with an http(s) URL or inline javascript:/vbscript:
+  payload. Mshta running remote or inline script is a classic signed-binary
+  proxy-execution technique used by phishing droppers. Local .hta business
+  applications (a legacy but real SME pattern) do not match because they carry a
+  local file path instead.
+severity: high
+event_class: process_activity
+min_schema_version: "1.0.0"
+mitre_technique_ids:
+  - T1218.005
+entity:
+  - host.hostname
+  - user.name
+detection:
+  condition:
+    all:
+      - field: process.name
+        op: iequals
+        value: "mshta.exe"
+      - field: process.cmd_line
+        op: icontains
+        value: ["http://", "https://", "javascript:", "vbscript:"]
+false_positives:
+  - Legacy intranet HTA applications launched from an http(s) URL on an internal web
+    server. If a tenant runs such an app, the recurring URL makes it easy to close as
+    expected_behavior and is strong input for tenant-level tuning (AC-46).
+references:
+  - https://attack.mitre.org/techniques/T1218/005/
+  - https://lolbas-project.github.io/lolbas/Binaries/Mshta/

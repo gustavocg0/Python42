@@ -1,0 +1,40 @@
+id: proc-powershell-download-cradle
+version: "1.0.0"
+title: PowerShell Download Cradle
+description: >
+  Detects PowerShell command lines that both reference a download primitive
+  (DownloadString/DownloadFile/Invoke-WebRequest/Invoke-RestMethod/Net.WebClient/
+  Start-BitsTransfer/curl/wget/iwr) and contain an http(s) URL. This is the classic
+  first-stage "download cradle" used by phishing payloads and loaders to pull the
+  next stage. Requiring BOTH a download keyword and "http" cuts benign hits from
+  scripts that merely mention these cmdlets.
+severity: high
+event_class: process_activity
+min_schema_version: "1.0.0"
+mitre_technique_ids:
+  - T1059.001
+  - T1105
+entity:
+  - host.hostname
+  - user.name
+detection:
+  condition:
+    all:
+      - field: process.name
+        op: iin
+        value: ["powershell.exe", "pwsh.exe"]
+      - field: process.cmd_line
+        op: icontains
+        value: ["downloadstring", "downloadfile", "invoke-webrequest", "invoke-restmethod", "iwr ", "net.webclient", "start-bitstransfer", "curl ", "wget "]
+      - field: process.cmd_line
+        op: icontains
+        value: "http"
+false_positives:
+  - Package/deployment automation (Chocolatey, winget bootstrap scripts, vendor
+    installers) legitimately downloads over HTTPS from PowerShell. Close as
+    expected_behavior naming the tool; stable per-tenant sources are tuning input (AC-46).
+  - Developer machines running ad-hoc API test scripts (Invoke-RestMethod).
+references:
+  - https://attack.mitre.org/techniques/T1059/001/
+  - https://attack.mitre.org/techniques/T1105/
+  - https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_powershell_download_patterns.yml

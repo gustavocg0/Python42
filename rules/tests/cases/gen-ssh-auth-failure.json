@@ -1,0 +1,70 @@
+{
+  "rule_id": "gen-ssh-auth-failure",
+  "rule_version": "1.0.0",
+  "must_match": [
+    {
+      "name": "sshd failed password line",
+      "event": {
+        "event_id": "00000000-0000-4000-8000-000000000080",
+        "tenant_id": "8c9d0e1f-2a3b-4c5d-6e7f-8a9b0c1d2e3f",
+        "schema_version": "1.0.0",
+        "event_class": "generic",
+        "activity": "log",
+        "event_time": "2026-07-08T09:14:03.221Z",
+        "ingest_time": "2026-07-08T09:14:05.100Z",
+        "source_type": "generic",
+        "source_event_id": "fixture-000080",
+        "batch_id": "0b7e3c1a-9d2f-4a5b-8c6d-1e2f3a4b5c6d",
+        "source": {
+          "ingest_key_id": "ik_FIXTURE01",
+          "vendor": "acme",
+          "product": "generic-src"
+        },
+        "host": {
+          "hostname": "nas-01",
+          "os_family": "linux",
+          "os_name": "Synology DSM",
+          "os_version": "7.2"
+        },
+        "message": "Failed password for invalid user admin from 203.0.113.9 port 51121 ssh2",
+        "category": "auth",
+        "raw": {
+          "msg": "Failed password for invalid user admin from 203.0.113.9 port 51121 ssh2"
+        }
+      }
+    }
+  ],
+  "must_not_match": [
+    {
+      "name": "successful publickey login",
+      "event": {
+        "event_id": "00000000-0000-4000-8000-000000000081",
+        "tenant_id": "8c9d0e1f-2a3b-4c5d-6e7f-8a9b0c1d2e3f",
+        "schema_version": "1.0.0",
+        "event_class": "generic",
+        "activity": "log",
+        "event_time": "2026-07-08T09:14:03.221Z",
+        "ingest_time": "2026-07-08T09:14:05.100Z",
+        "source_type": "generic",
+        "source_event_id": "fixture-000081",
+        "batch_id": "0b7e3c1a-9d2f-4a5b-8c6d-1e2f3a4b5c6d",
+        "source": {
+          "ingest_key_id": "ik_FIXTURE01",
+          "vendor": "acme",
+          "product": "generic-src"
+        },
+        "host": {
+          "hostname": "nas-01",
+          "os_family": "linux",
+          "os_name": "Synology DSM",
+          "os_version": "7.2"
+        },
+        "message": "Accepted publickey for deploy from 10.0.0.5 port 51121 ssh2",
+        "category": "auth",
+        "raw": {
+          "msg": "Accepted publickey for deploy from 10.0.0.5 port 51121 ssh2"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+id: net-large-outbound-transfer
+version: "1.0.0"
+title: Large Single-Connection Outbound Transfer to External Address
+description: >
+  Detects a closed outbound connection to an external address that sent 100 MiB
+  (104857600 bytes) or more in a single connection. Stateless per-event exfiltration
+  heuristic - bytes_sent is only populated on connection_closed events, so one flow
+  carries its own total. Threshold rationale - ordinary web/API traffic from SME
+  workstations rarely exceeds tens of MiB per single connection, while bulk
+  exfiltration and unauthorized cloud uploads commonly do; 100 MiB was chosen a
+  priori to keep the expected FP rate at a few events per tenant-day (dominated by
+  backup/sync tools, which are stable and easy to acknowledge). Tune with AC-46
+  feedback once production data exists.
+severity: medium
+event_class: network_activity
+min_schema_version: "1.0.0"
+mitre_technique_ids:
+  - T1048
+  - T1030
+entity:
+  - host.hostname
+  - dst.ip
+detection:
+  condition:
+    all:
+      - field: activity
+        op: equals
+        value: "connection_closed"
+      - field: direction
+        op: equals
+        value: "outbound"
+      - field: bytes_sent
+        op: gte
+        value: 104857600
+      - not:
+          field: dst.ip
+          op: istartswith
+          value: ["10.", "192.168.", "172.16.", "172.17.", "172.18.", "172.19.", "172.20.", "172.21.", "172.22.", "172.23.", "172.24.", "172.25.", "172.26.", "172.27.", "172.28.", "172.29.", "172.30.", "172.31.", "127.", "169.254.", "fe80:", "fc", "fd", "::1"]
+false_positives:
+  - Cloud backup and sync clients (OneDrive, Dropbox, Backblaze, Veeam cloud
+    targets), video-call recordings uploads, and large email attachments via
+    webmail. These recur to the same destinations; close as expected_behavior so
+    the (rule, entity) pairs accumulate as tuning input (AC-46).
+references:
+  - https://attack.mitre.org/techniques/T1048/
+  - https://attack.mitre.org/techniques/T1030/

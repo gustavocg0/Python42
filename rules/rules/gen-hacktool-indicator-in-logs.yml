@@ -1,0 +1,33 @@
+id: gen-hacktool-indicator-in-logs
+version: "1.0.0"
+title: Offensive Tool Name Reported in Forwarded Logs
+description: >
+  Detects generic-ingest log lines (firewall, AV, NAS, third-party security
+  products) whose message mentions a well-known offensive tool - Mimikatz,
+  Meterpreter, Cobalt Strike, BloodHound/SharpHound, LaZagne, Impacket, Brute
+  Ratel. When a tenant's existing products name these tools, something already
+  tripped over real attack tooling; this rule surfaces it in the unified queue
+  even without an agent on the affected host.
+severity: high
+event_class: generic
+min_schema_version: "1.0.0"
+mitre_technique_ids:
+  - T1003.001
+  - T1071.001
+entity:
+  - host.hostname
+detection:
+  condition:
+    field: message
+    op: icontains
+    value: ["mimikatz", "meterpreter", "cobalt strike", "cobaltstrike", "bloodhound", "sharphound", "lazagne", "impacket", "brute ratel"]
+false_positives:
+  - AV/EDR logs that mention a tool name in a signature update or a *blocked and
+    cleaned* verdict (partially a true positive - verify remediation), security
+    awareness/phishing-simulation content, and authorized penetration tests.
+  - Log lines about detection-engineering itself (e.g., an IDS rule name containing
+    "mimikatz"). Close as expected_behavior naming the product.
+references:
+  - https://attack.mitre.org/techniques/T1003/001/
+  - https://attack.mitre.org/techniques/T1071/001/
+  - https://attack.mitre.org/software/S0002/

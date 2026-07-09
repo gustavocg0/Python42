@@ -1,0 +1,25 @@
+# Root build context (ops/docker/*.Dockerfile use context: .).
+# Keep the context small and deterministic — everything COPY'd is listed in
+# the Dockerfiles; this excludes bulk/derived/secret paths.
+# NOTE: agent/ builds use their own context (./agent) and its own .dockerignore.
+
+.git
+.github
+docs
+agent
+web/node_modules
+web/.next
+web/tsconfig.tsbuildinfo
+.venv
+**/__pycache__
+**/*.pyc
+.pytest_cache
+.ruff_cache
+node_modules
+dist
+build
+
+# Secrets never enter an image (SEC-49)
+.env
+.env.*
+!.env.example

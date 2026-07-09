@@ -1,0 +1,48 @@
+# import-linter configuration (run: uv run lint-imports)
+#
+# Binding boundary rules (design doc §1):
+#   - services/controlplane and services/dataplane never import each other
+#     (cross-plane calls go over HTTP only, authenticated per design §5.1 / SEC-40).
+#   - Both services may import packages/*; packages/* never import services/*.
+#
+[importlinter]
+root_packages =
+    soc_schemas
+    soc_pipeline
+    soc_tenancy
+    soc_entitlements
+    soc_audit
+    soc_telemetry
+    controlplane
+    dataplane
+include_external_packages = True
+
+[importlinter:contract:services-are-independent]
+name = controlplane and dataplane never import each other
+type = independence
+modules =
+    controlplane
+    dataplane
+
+[importlinter:contract:packages-never-import-services]
+name = Shared packages never import services
+type = forbidden
+source_modules =
+    soc_schemas
+    soc_pipeline
+    soc_tenancy
+    soc_entitlements
+    soc_audit
+    soc_telemetry
+forbidden_modules =
+    services
+    controlplane
+    dataplane
+    app
+
+[importlinter:contract:package-layering]
+name = soc_schemas is the only shared lower layer; other packages stay independent of each other
+type = layers
+layers =
+    soc_pipeline | soc_tenancy | soc_entitlements | soc_audit | soc_telemetry
+    soc_schemas

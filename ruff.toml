@@ -1,0 +1,41 @@
+# Ruff configuration for the whole Python monorepo (packages/ and, later, services/ and db/).
+target-version = "py313"
+line-length = 100
+src = ["packages/*/src", "services/*/src"]
+
+[lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # pyflakes
+    "I",      # isort
+    "B",      # flake8-bugbear
+    "UP",     # pyupgrade
+    "ASYNC",  # flake8-async (no blocking I/O in async code)
+    "S105",   # hardcoded password string
+    "S106",   # hardcoded password func arg
+    "RUF",
+]
+ignore = [
+    "E501",  # line length handled by formatter
+]
+
+[lint.flake8-bugbear]
+# FastAPI dependency-injection idiom: Depends()/Query() in defaults is intended.
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Header"]
+
+[lint.per-file-ignores]
+"packages/*/tests/*" = ["S105", "S106"]  # test fixtures use dummy secrets
+"services/*/tests/*" = ["S105", "S106"]  # test fixtures use dummy secrets
+
+[lint.isort]
+known-first-party = [
+    "soc_schemas",
+    "soc_pipeline",
+    "soc_tenancy",
+    "soc_entitlements",
+    "soc_audit",
+    "soc_telemetry",
+    "controlplane",
+    "dataplane",
+]

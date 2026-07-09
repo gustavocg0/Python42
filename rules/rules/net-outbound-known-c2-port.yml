@@ -1,0 +1,43 @@
+id: net-outbound-known-c2-port
+version: "1.0.0"
+title: Outbound Connection to Well-Known C2/Backdoor Port
+description: >
+  Detects outbound TCP connections to external addresses on ports historically
+  associated with command-and-control frameworks, backdoors, and IRC botnets
+  (1337, 4444, 5555, 6666, 6667, 6697, 31337). Port list rationale: default
+  Metasploit/commodity-RAT listeners (4444, 5555, 1337, 31337) and IRC C2
+  (6666/6667/6697); deliberately excludes ports with large benign populations
+  (e.g., 8080, 9001). Internal destinations are excluded because lab/dev services
+  commonly bind these ports inside the LAN.
+severity: medium
+event_class: network_activity
+min_schema_version: "1.0.0"
+mitre_technique_ids:
+  - T1571
+entity:
+  - host.hostname
+  - dst.ip
+detection:
+  condition:
+    all:
+      - field: direction
+        op: equals
+        value: "outbound"
+      - field: protocol
+        op: equals
+        value: "tcp"
+      - field: dst.port
+        op: in
+        value: [1337, 4444, 5555, 6666, 6667, 6697, 31337]
+      - not:
+          field: dst.ip
+          op: istartswith
+          value: ["10.", "192.168.", "172.16.", "172.17.", "172.18.", "172.19.", "172.20.", "172.21.", "172.22.", "172.23.", "172.24.", "172.25.", "172.26.", "172.27.", "172.28.", "172.29.", "172.30.", "172.31.", "127.", "169.254.", "fe80:", "fc", "fd", "::1"]
+false_positives:
+  - Port 5555 is also used by Android ADB-over-TCP and some vendor services; port
+    6667 by legitimate (rare) IRC use. A developer connecting to an external dev
+    box on one of these ports will match — close as expected_behavior with the
+    destination noted; repeated closes for the same dst.ip feed tuning (AC-46).
+references:
+  - https://attack.mitre.org/techniques/T1571/
+  - https://www.speedguide.net/port.php?port=4444

@@ -1,0 +1,172 @@
+{
+  "rule_id": "proc-schtasks-suspicious-task",
+  "rule_version": "1.0.0",
+  "must_match": [
+    {
+      "name": "schtasks create running powershell",
+      "event": {
+        "event_id": "00000000-0000-4000-8000-000000000025",
+        "tenant_id": "8c9d0e1f-2a3b-4c5d-6e7f-8a9b0c1d2e3f",
+        "schema_version": "1.0.0",
+        "event_class": "process_activity",
+        "activity": "process_launched",
+        "event_time": "2026-07-08T09:14:03.221Z",
+        "ingest_time": "2026-07-08T09:14:05.100Z",
+        "source_type": "agent",
+        "source_event_id": "fixture-000025",
+        "batch_id": "0b7e3c1a-9d2f-4a5b-8c6d-1e2f3a4b5c6d",
+        "source": {
+          "device_id": "dev_FIXTURE01",
+          "agent_version": "0.3.1"
+        },
+        "host": {
+          "hostname": "acme-ws-01",
+          "os_family": "windows",
+          "os_name": "Windows 11 Pro",
+          "os_version": "10.0.26100",
+          "ip": "10.1.4.23"
+        },
+        "process": {
+          "pid": 4312,
+          "name": "schtasks.exe",
+          "exe_path": "C:\\Windows\\System32\\schtasks.exe",
+          "cmd_line": "schtasks /create /tn Updater /tr \"powershell -w hidden -enc SQBFAFgA\" /sc minute /mo 5 /f"
+        },
+        "parent": {
+          "pid": 1180,
+          "name": "explorer.exe"
+        },
+        "user": {
+          "name": "sam.jones",
+          "domain": "ACME",
+          "uid": "S-1-5-21-1-2-3-1104"
+        }
+      }
+    },
+    {
+      "name": "schtasks create pointing at AppData binary",
+      "event": {
+        "event_id": "00000000-0000-4000-8000-000000000026",
+        "tenant_id": "8c9d0e1f-2a3b-4c5d-6e7f-8a9b0c1d2e3f",
+        "schema_version": "1.0.0",
+        "event_class": "process_activity",
+        "activity": "process_launched",
+        "event_time": "2026-07-08T09:14:03.221Z",
+        "ingest_time": "2026-07-08T09:14:05.100Z",
+        "source_type": "agent",
+        "source_event_id": "fixture-000026",
+        "batch_id": "0b7e3c1a-9d2f-4a5b-8c6d-1e2f3a4b5c6d",
+        "source": {
+          "device_id": "dev_FIXTURE01",
+          "agent_version": "0.3.1"
+        },
+        "host": {
+          "hostname": "acme-ws-01",
+          "os_family": "windows",
+          "os_name": "Windows 11 Pro",
+          "os_version": "10.0.26100",
+          "ip": "10.1.4.23"
+        },
+        "process": {
+          "pid": 4312,
+          "name": "schtasks.exe",
+          "exe_path": "C:\\Windows\\System32\\schtasks.exe",
+          "cmd_line": "schtasks /create /tn Sync /tr C:\\Users\\sam\\AppData\\Roaming\\sync\\sync.exe /sc onlogon"
+        },
+        "parent": {
+          "pid": 1180,
+          "name": "explorer.exe"
+        },
+        "user": {
+          "name": "sam.jones",
+          "domain": "ACME",
+          "uid": "S-1-5-21-1-2-3-1104"
+        }
+      }
+    }
+  ],
+  "must_not_match": [
+    {
+      "name": "schtasks create for Program Files binary (benign updater)",
+      "event": {
+        "event_id": "00000000-0000-4000-8000-000000000027",
+        "tenant_id": "8c9d0e1f-2a3b-4c5d-6e7f-8a9b0c1d2e3f",
+        "schema_version": "1.0.0",
+        "event_class": "process_activity",
+        "activity": "process_launched",
+        "event_time": "2026-07-08T09:14:03.221Z",
+        "ingest_time": "2026-07-08T09:14:05.100Z",
+        "source_type": "agent",
+        "source_event_id": "fixture-000027",
+        "batch_id": "0b7e3c1a-9d2f-4a5b-8c6d-1e2f3a4b5c6d",
+        "source": {
+          "device_id": "dev_FIXTURE01",
+          "agent_version": "0.3.1"
+        },
+        "host": {
+          "hostname": "acme-ws-01",
+          "os_family": "windows",
+          "os_name": "Windows 11 Pro",
+          "os_version": "10.0.26100",
+          "ip": "10.1.4.23"
+        },
+        "process": {
+          "pid": 4312,
+          "name": "schtasks.exe",
+          "exe_path": "C:\\Windows\\System32\\schtasks.exe",
+          "cmd_line": "schtasks /create /tn \"Vendor Backup\" /tr \"C:\\Program Files\\Backup\\backup.exe\" /sc daily /st 02:00"
+        },
+        "parent": {
+          "pid": 1180,
+          "name": "explorer.exe"
+        },
+        "user": {
+          "name": "sam.jones",
+          "domain": "ACME",
+          "uid": "S-1-5-21-1-2-3-1104"
+        }
+      }
+    },
+    {
+      "name": "schtasks query only",
+      "event": {
+        "event_id": "00000000-0000-4000-8000-000000000028",
+        "tenant_id": "8c9d0e1f-2a3b-4c5d-6e7f-8a9b0c1d2e3f",
+        "schema_version": "1.0.0",
+        "event_class": "process_activity",
+        "activity": "process_launched",
+        "event_time": "2026-07-08T09:14:03.221Z",
+        "ingest_time": "2026-07-08T09:14:05.100Z",
+        "source_type": "agent",
+        "source_event_id": "fixture-000028",
+        "batch_id": "0b7e3c1a-9d2f-4a5b-8c6d-1e2f3a4b5c6d",
+        "source": {
+          "device_id": "dev_FIXTURE01",
+          "agent_version": "0.3.1"
+        },
+        "host": {
+          "hostname": "acme-ws-01",
+          "os_family": "windows",
+          "os_name": "Windows 11 Pro",
+          "os_version": "10.0.26100",
+          "ip": "10.1.4.23"
+        },
+        "process": {
+          "pid": 4312,
+          "name": "schtasks.exe",
+          "exe_path": "C:\\Windows\\System32\\schtasks.exe",
+          "cmd_line": "schtasks /query /tn Updater /v"
+        },
+        "parent": {
+          "pid": 1180,
+          "name": "explorer.exe"
+        },
+        "user": {
+          "name": "sam.jones",
+          "domain": "ACME",
+          "uid": "S-1-5-21-1-2-3-1104"
+        }
+      }
+    }
+  ]
+}
