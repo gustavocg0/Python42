@@ -17,6 +17,24 @@ docker compose --profile demo up -d agent-sim
 Windows: run from Git Bash. Requires Docker Desktop (WSL2), `curl`,
 `python` on PATH. No `jq` needed.
 
+### Ubuntu (native Linux)
+
+```bash
+# Docker Engine + compose plugin (not the docker.io snap):
+#   https://docs.docker.com/engine/install/ubuntu/
+sudo usermod -aG docker "$USER"   # then re-login
+# Elasticsearch mmap requirement (poc-up.sh also auto-raises it, non-persistent):
+echo 'vm.max_map_count=262144' | sudo tee /etc/sysctl.d/99-elasticsearch.conf
+sudo sysctl --system
+```
+
+Everything else is identical to the quick start. GPU note: the triager runs
+keyless (`TRIAGE_FAKE=1`) in the POC; to use a local GPU model instead, put an
+Anthropic-format proxy (e.g. LiteLLM over vLLM/Ollama) in front of it and set
+`ANTHROPIC_BASE_URL` + `ANTHROPIC_API_KEY` + `TRIAGE_MODEL_ID` on the triager
+service with `TRIAGE_FAKE` unset — the Anthropic SDK honors `ANTHROPIC_BASE_URL`
+natively; no code change needed (untested, tracked in the backlog).
+
 ## Host ports
 
 | Port | What | Notes |

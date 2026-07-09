@@ -23,6 +23,21 @@ docker info >/dev/null 2>&1 || {
     exit 1
 }
 
+# Native Linux only: Elasticsearch needs vm.max_map_count >= 262144 (Docker
+# Desktop's VM ships it; bare-metal Ubuntu defaults to 65530 and ES crashes).
+if [ "$(uname -s)" = "Linux" ] && [ -r /proc/sys/vm/max_map_count ]; then
+    mmc="$(cat /proc/sys/vm/max_map_count)"
+    if [ "$mmc" -lt 262144 ]; then
+        echo "poc-up: vm.max_map_count=$mmc is too low for Elasticsearch; raising to 262144 (needs sudo)"
+        sudo sysctl -w vm.max_map_count=262144 || {
+            echo "ERROR: could not raise vm.max_map_count. Run manually:" >&2
+            echo "  sudo sysctl -w vm.max_map_count=262144" >&2
+            echo "  (persist: echo 'vm.max_map_count=262144' | sudo tee /etc/sysctl.d/99-elasticsearch.conf)" >&2
+            exit 1
+        }
+    fi
+fi
+
 gen_secret() {
     if command -v openssl >/dev/null 2>&1; then
         openssl rand -hex 32
