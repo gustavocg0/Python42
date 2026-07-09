@@ -49,7 +49,7 @@ esac
 (e.g. -v ./certs/dev-ca.crt:/certs/dev-ca.crt:ro) or set SOC_CA_CERT_PATH"
 
 [ -w "$DATA_DIR" ] || fail "$DATA_DIR is not writable by uid $(id -u) — \
-use a named volume, or chown the bind mount to 10001:10001"
+use a named volume, or chown the bind mount to 10002:10002"
 
 # Enrollment: only needed until a device identity exists in the volume.
 if [ ! -f "$STATE_DIR/identity.json" ]; then

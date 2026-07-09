@@ -35,8 +35,11 @@ FROM debian:bookworm-slim@sha256:60eac759739651111db372c07be67863818726f754804b8
 
 # Non-root service account. /var/lib/socagent is created owned by it so a
 # fresh named volume inherits the ownership on first mount.
-RUN groupadd --system --gid 10001 socagent \
-    && useradd --system --uid 10001 --gid socagent \
+# uid 10002 deliberately differs from the platform runtime uid 10001: the
+# compose demo mounts the shared dev-ca volume (whose dev-ca.key is 0600
+# uid 10001) at /certs, and the agent must not be able to read the CA key.
+RUN groupadd --system --gid 10002 socagent \
+    && useradd --system --uid 10002 --gid socagent \
        --home-dir /var/lib/socagent --shell /usr/sbin/nologin socagent \
     && mkdir -p /var/lib/socagent \
     && chown socagent:socagent /var/lib/socagent \

@@ -36,6 +36,66 @@ SOC_AGENT_ENROLLMENT_TOKEN=et_xxx ./target/debug/agentd agent.toml
 Provider is chosen by config (`provider = "etw" | "simulated"`), never at
 compile time (AC-62). On non-Windows hosts use `simulated`.
 
+## Docker (simulated provider)
+
+`agent/Dockerfile` builds a Linux container that runs agentd with the
+**simulated** provider for the local docker-compose POC: it enrolls through
+the nginx mTLS gateway, streams simulated events (including
+detection-tripping scenarios), and shows up as an asset with detections in
+the console. Multi-stage build: pinned `rust:1.87.0-slim-bookworm` (by
+digest) → `debian:bookworm-slim` (by digest), non-root user
+`socagent` (uid/gid 10002), release binary (https-only, AC-69).
+
+```
+docker build -t soc-agent -f agent/Dockerfile agent/
+```
+
+### Environment (compose contract)
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `SOC_GATEWAY_URL` | *(required)* | Base URL of the agent gateway, e.g. `https://gateway:8443` |
+| `SOC_ENROLL_TOKEN` | — | One-time enrollment token (`et_...` from `POST /v1/enrollment-tokens`). Required only until the device is enrolled; ignored afterwards |
+| `SOC_CA_CERT_PATH` | `/certs/dev-ca.crt` | CA bundle (PEM) to trust for the gateway's server TLS — mount the compose dev CA read-only |
+| `SOC_SIM_EPS` | `5` | Simulated events per second |
+| `SOC_SIM_SEED` | `0` | `0` = random; non-zero = deterministic stream (CI/e2e) |
+| `SOC_SIM_SUSPICIOUS` | `true` | Emit detection-tripping scenarios |
+
+### Volumes
+
+- `/var/lib/socagent` — persistent state: rendered `agent.toml`, device
+  identity/credentials (`state/`), and the disk ring buffer. Use a **named
+  volume** (fresh named volumes inherit the image's `socagent` ownership;
+  a bind mount must be chowned to `10002:10002`). Persisting this volume is
+  what keeps the device identity stable across container restarts, so the
+  asset inventory sees ONE device instead of re-enrolling a duplicate on
+  every start (billing accuracy).
+- `/certs/dev-ca.crt` (read-only) — the compose dev CA bundle.
+
+### How enrollment works in the compose demo
+
+1. First start: no `state/identity.json` in the volume, so the entrypoint
+   requires `SOC_ENROLL_TOKEN`, renders `agent.toml` from
+   `packaging/docker/agent.toml.tmpl`, and execs `agentd` in the foreground
+   (logs to stdout). The token is passed via the `SOC_AGENT_ENROLLMENT_TOKEN`
+   env override and is **never written to disk** (SEC-13).
+2. agentd generates an ECDSA P-256 key + empty-subject CSR (SEC-8) and posts
+   `POST {SOC_GATEWAY_URL}/v1/agent/enroll` over server-verified TLS (dev CA
+   trust anchor; no client cert yet, per api-contracts §10).
+3. The response's device certificate/chain and `ingest_url` (a **base** URL —
+   in compose it must resolve back to the gateway) are persisted in the
+   volume; all subsequent traffic (`/v1/agent/events`, `/v1/agent/heartbeat`,
+   `/v1/agent/renew-credential`) is mTLS with the per-device certificate.
+4. If the gateway isn't up yet (compose race) or the token is bad, agentd
+   logs the distinct reason and exits non-zero — run the container with
+   `restart: on-failure` so enrollment retries until the platform is ready.
+5. Restarts: identity exists in the volume → enrollment is skipped, stale
+   tokens are ignored, telemetry resumes under the same `device_id`.
+
+Tip: set a compose `hostname:` on the agent service for a stable, readable
+asset name in the console (the simulated provider stamps events with the
+container hostname).
+
 ## State directory
 
 `{state_dir}/` holds `device_key.pem` (0600 on Unix), `device_cert.pem`,

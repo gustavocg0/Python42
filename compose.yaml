@@ -427,12 +427,14 @@ services:
       dockerfile: Dockerfile
     image: soc-poc/agent-sim:latest
     restart: unless-stopped
+    hostname: poc-demo-host
     environment:
       SOC_GATEWAY_URL: https://gateway:8443
       SOC_ENROLL_TOKEN: ${SOC_ENROLL_TOKEN:-}
       SOC_CA_CERT_PATH: /certs/dev-ca.crt
     volumes:
       - dev-ca:/certs:ro
+      - agent-sim-state:/var/lib/socagent
     depends_on:
       gateway:
         condition: service_healthy
@@ -482,3 +484,4 @@ volumes:
   esdata:
   redisdata:
   dev-ca:
+  agent-sim-state:
